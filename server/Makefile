@@ -2,7 +2,7 @@ include ../Makefile.commons
 
 # Source files
 SERVER_SRC = main.c serverUtils.c
-SHARED_SRC = ../shared/logger.c ../shared/util.c
+SHARED_SRC = ../shared/logger.c 
 
 # Object files
 SERVER_OBJ = $(SERVER_SRC:.c=.o)
