@@ -10,35 +10,34 @@ int serverRunning = 1;
 // Signal handler function
 void handleSignal(int signal)
 {
-    if (signal == SIGINT || signal == SIGTSTP) {
-        log(INFO, "Signal Received. Stopping server");
-        serverRunning = 0;
-    }
+        if (signal == SIGINT || signal == SIGTSTP) {
+                log(INFO, "Signal Received. Stopping server");
+                serverRunning = 0;
+        }
 }
-
 
 int main(int argc, char *argv[])
 {
-    char * defaultService = "110";
-    // TODO: Receive port via args
-    
-    close(0); // Nothing to read from stdin
+        char *defaultService = "110";
+        // TODO: Receive port via args
 
-    int masterSocket = createTCPSocketServer(defaultService);
-    if (masterSocket < 0) {
-        log(ERROR, "Couln't create master socket");
-        return -1;
-    }
-    
-     // Register signal handlers
-    signal(SIGINT, handleSignal);
-    signal(SIGTSTP, handleSignal);
+        close(0); // Nothing to read from stdin
 
-    while(serverRunning) {
-        // Handle connections
-    }
+        int masterSocket = createTCPSocketServer(defaultService);
+        if (masterSocket < 0) {
+                log(ERROR, "Couln't create master socket");
+                return -1;
+        }
 
-    close(masterSocket);
+        // Register signal handlers
+        signal(SIGINT, handleSignal);
+        signal(SIGTSTP, handleSignal);
 
-    return 0;
+        while (serverRunning) {
+                // Handle connections
+        }
+
+        close(masterSocket);
+
+        return 0;
 }
