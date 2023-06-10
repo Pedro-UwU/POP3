@@ -9,8 +9,8 @@
 #include <sys/socket.h>
 #include <unistd.h>
 #include <errno.h>
-#include "../shared/logger.h"
-#include "serverUtils.h"
+#include "utils/logger.h"
+#include "server/serverUtils.h"
 
 int createTCPSocketServer(const char *service)
 {

@@ -2,8 +2,8 @@
 #include <unistd.h>
 #include <signal.h>
 #include <netinet/in.h>
-#include "serverUtils.h"
-#include "../shared/logger.h"
+#include "server/serverUtils.h"
+#include "utils/logger.h"
 
 int serverRunning = 1;
 

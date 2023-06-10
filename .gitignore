@@ -50,3 +50,33 @@ modules.order
 Module.symvers
 Mkfile.old
 dkms.conf
+
+# IDE
+.vscode/
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+!.vscode/*.code-snippets
+
+.idea/
+
+# Mix
+.DS_Store
+strace_out
+vgcore.*
+
+# Binary Files
+*.bin
+*.sys
+
+# clangd
+.cache/
+compile_commands.json
+.gdb_history
+temp.txt
+
+# Project folders
+bin/
+obj/

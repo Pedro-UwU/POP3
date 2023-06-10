@@ -1,4 +1,0 @@
-# Compiler and flags
-CC = gcc
-CFLAGS = -Wall -Wextra -std=c11 -pedantic -fsanitize=address
-
