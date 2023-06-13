@@ -24,7 +24,7 @@ void dummy_read(struct selector_key * key) {
 
 int main(void)
 {
-        char *defaultService = "60711";
+        unsigned int port = 110;
         // TODO: Receive port via args
 
         //close(0); // Nothing to read from stdin
@@ -33,7 +33,7 @@ int main(void)
         selector_status ss = SELECTOR_SUCCESS;
         fd_selector selector = NULL;
 
-        int masterSocket = createTCPSocketServer(defaultService);
+        int masterSocket = createTCPSocketServer(port);
         if (masterSocket < 0) {
                 log(ERROR, "Couln't create master socket");
                 goto finally;
@@ -69,7 +69,7 @@ int main(void)
         }
 
         const struct fd_handler masterHandler = {
-            .handle_read = dummy_read,
+            .handle_read = NULL,
             .handle_write = NULL,
             .handle_close = NULL,
         };

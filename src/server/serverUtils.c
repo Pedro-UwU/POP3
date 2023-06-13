@@ -12,14 +12,14 @@
 #include "utils/logger.h"
 #include "server/serverUtils.h"
 
-int createTCPSocketServer(const char *service)
+int createTCPSocketServer(unsigned int port)
 {
-        unsigned int port = atoi(service);
         log(DEBUG, "Port: %d", port);
         struct sockaddr_in addr;
         memset(&addr, 0, sizeof(addr));
         addr.sin_family = AF_INET;
         addr.sin_addr.s_addr = htonl(INADDR_ANY);
+        addr.sin_port = htons(port);
 
         const int serverSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
         if (serverSocket < 0) {
@@ -39,7 +39,7 @@ int createTCPSocketServer(const char *service)
                 return -1;
         }
         log(DEBUG,
-            "[serverUtils][createTCPSocketServer] Socket %d bound to port %d",
+            "[serverUtils][createTCPSocketServer] Socket %d bounded to port %d",
             serverSocket, port);
 
         if (listen(serverSocket, port)) {
