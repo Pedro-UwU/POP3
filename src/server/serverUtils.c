@@ -15,6 +15,7 @@
 int createTCPSocketServer(const char *service)
 {
         unsigned int port = atoi(service);
+        log(DEBUG, "Port: %d", port);
         struct sockaddr_in addr;
         memset(&addr, 0, sizeof(addr));
         addr.sin_family = AF_INET;

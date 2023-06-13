@@ -1,5 +1,6 @@
 # Source files
-SRC = main.c serverUtils.c
+SRC = $(wildcard *.c)
+
 
 # Object files
 OBJ = $(SRC:%.c=$(OBJDIR)/%.o)
