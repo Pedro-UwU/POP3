@@ -26,7 +26,7 @@ unsigned greeting_write(struct selector_key * key) {
        return ERROR_POP3;
    }
    log(INFO, "Greeting sent to fd %d", key->fd);
-   return DONE;
+   return DONE; // TODO: RETURN AUTH_READ
 
 }
 #endif /* ifndef GREETING */

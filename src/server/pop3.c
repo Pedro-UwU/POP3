@@ -7,6 +7,7 @@
 #include <server/states/greeting.h>
 #include <server/selector.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <unistd.h>
 #include <utils/logger.h>
 #include <sys/socket.h>
@@ -20,6 +21,8 @@ static void init_new_client_data(client_data* data, int new_fd, struct sockaddr_
 void pop3_handle_read(struct selector_key* key);
 void pop3_handle_write(struct selector_key* key);
 void pop3_handle_close(struct selector_key* key);
+
+void close_connection(struct selector_key* key);
 
 static const fd_handler pop3_handler = {
     .handle_read = pop3_handle_read,
@@ -98,7 +101,7 @@ void pop3_handle_write(struct selector_key* key) {
     client_data* data = GET_DATA(key);
     const enum pop3_states status = stm_handler_write(&data->stm, key);
     if (status == ERROR_POP3 || status == DONE) {
-        // close connection;
+        close_connection(key);
     }
 }
 
@@ -106,4 +109,29 @@ void pop3_handle_read(struct selector_key* key) {
     // TODO
 }
 
+void pop3_handle_close(struct selector_key* key) {
+    client_data* data = GET_DATA(key);
+    stm_handler_close(&data->stm, key);
+    close_connection(key);
+}
+
+void close_connection(struct selector_key* key) {
+    client_data* data = GET_DATA(key);
+    //Already closed
+    if (data->closed) {
+        return;
+    }
+
+    data->closed = true;
+    log(INFO, "Closing connection from socket %d", key->fd);
+
+    selector_unregister_fd(key->s, key->fd);
+
+    if (data != NULL) {
+        // REMEMBER to free any allocated resources
+        free(data);
+    }
+    
+    close(key->fd);
+}
 #endif /* ifndef POP3 */

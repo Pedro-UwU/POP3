@@ -25,7 +25,7 @@ int main(void)
         unsigned int port = 60711;
         // TODO: Receive port via args
 
-        //close(0); // Nothing to read from stdin
+        close(0); // Nothing to read from stdin
         
         const char *err_msg = NULL;
         selector_status ss = SELECTOR_SUCCESS;

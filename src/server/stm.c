@@ -11,9 +11,7 @@
 void
 stm_init(struct state_machine *stm) {
     // verificamos que los estados son correlativos, y que están bien asignados.
-    printf("Max State: %d\n", stm->max_state);
     for(unsigned i = 0 ; i <= stm->max_state; i++) {
-        printf("State[%d]\n", i);
         if(i != stm->states[i].state) {
             abort();
         }
