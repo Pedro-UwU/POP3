@@ -19,9 +19,11 @@ typedef struct client_data { // Add more items as we need them
     bool closed;
     int client_fd;
 
-    uint8_t client_buffer_data[BUFFER_SIZE];
-    struct buffer client_buffer;
-    
+    uint8_t read_buffer_data[BUFFER_SIZE];
+    struct buffer read_buffer_client;
+
+    uint8_t write_buffer_data[BUFFER_SIZE];
+    struct buffer write_buffer_client;
 } client_data;
 
 enum pop3_states {
@@ -29,6 +31,7 @@ enum pop3_states {
     //AUTH_READ,
     //AUTH_WRITE,
     /* ... */
+    DONE,
     ERROR_POP3
 };
 

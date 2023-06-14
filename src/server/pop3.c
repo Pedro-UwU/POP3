@@ -17,17 +17,23 @@
 
 static void init_new_client_data(client_data* data, int new_fd, struct sockaddr_storage client_address);
 
+void pop3_handle_read(struct selector_key* key);
+void pop3_handle_write(struct selector_key* key);
+void pop3_handle_close(struct selector_key* key);
+
 static const fd_handler pop3_handler = {
-    .handle_read = NULL,
-    .handle_write = NULL,
+    .handle_read = pop3_handle_read,
+    .handle_write = pop3_handle_write,
     .handle_close = NULL,
-    .handle_block = NULL
 };
 
 const struct state_definition client_states[] = {
     {
         .state = GREETING_WRITE,
-        .on_read_ready = NULL,
+        .on_write_ready = greeting_write,
+    },
+    {
+        .state = DONE,
     },
     {
         .state = ERROR_POP3,
@@ -82,9 +88,22 @@ static void init_new_client_data(client_data* data, int new_fd, struct sockaddr_
     data->closed = false;
     data->client_fd = new_fd;
     data->client_address = client_address; 
-    buffer_init(&data->client_buffer, BUFFER_SIZE, data->client_buffer_data);
+    buffer_init(&data->read_buffer_client, BUFFER_SIZE, data->read_buffer_data);
+    buffer_init(&data->write_buffer_client, BUFFER_SIZE, data->write_buffer_data);
 
     stm_init(&data->stm);
+}
+
+void pop3_handle_write(struct selector_key* key) {
+    client_data* data = GET_DATA(key);
+    const enum pop3_states status = stm_handler_write(&data->stm, key);
+    if (status == ERROR_POP3 || status == DONE) {
+        // close connection;
+    }
+}
+
+void pop3_handle_read(struct selector_key* key) {
+    // TODO
 }
 
 #endif /* ifndef POP3 */

@@ -21,6 +21,7 @@ void handleSignal(int signal)
 
 int main(void)
 {
+        setLogLevel(DEBUG);
         unsigned int port = 60711;
         // TODO: Receive port via args
 
