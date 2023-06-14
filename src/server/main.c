@@ -4,8 +4,9 @@
 #include <errno.h>
 #include <netinet/in.h>
 #include <server/serverUtils.h>
-#include <utils/logger.h>
 #include <server/selector.h>
+#include <server/pop3.h>
+#include <utils/logger.h>
 
 int serverRunning = 1;
 
@@ -18,13 +19,9 @@ void handleSignal(int signal)
         }
 }
 
-void dummy_read(struct selector_key * key) {
-    log(INFO, "Me llego algo");
-}
-
 int main(void)
 {
-        unsigned int port = 110;
+        unsigned int port = 60711;
         // TODO: Receive port via args
 
         //close(0); // Nothing to read from stdin
@@ -69,7 +66,7 @@ int main(void)
         }
 
         const struct fd_handler masterHandler = {
-            .handle_read = NULL,
+            .handle_read = pop3AcceptPassive,
             .handle_write = NULL,
             .handle_close = NULL,
         };
