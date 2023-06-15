@@ -24,12 +24,14 @@ unsigned auth_user_read(struct selector_key* key) {
 
     size_t read_limit = 0;
     uint8_t * readBuffer = buffer_write_ptr(&data->read_buffer_client, &read_limit);
-    log(DEBUG, "read_limit: %d", (int)read_limit);
     size_t read_count = recv(key->fd, readBuffer, read_limit, 0);
     if (read_count > 0) 
         log(DEBUG, "auth_user_read read %ld bytes", read_count);
     if (read_count < 0) {
         return ERROR_POP3;
+    }
+    if (read_count == 0) {
+        log(DEBUG, "Socket %d closed connections", key->fd);
     }
 
     buffer_write_adv(&data->read_buffer_client, read_count);

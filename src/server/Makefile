@@ -11,7 +11,7 @@ EXEC = $(BINDIR)/server
 # Build rule
 all: $(EXEC)
 
-$(EXEC): $(OBJ)
+$(EXEC): $(OBJ) 
 	@echo -e ${BLUE}${BOLD}"==> Server executable: $@"${NOCOLOR}
 	$(CC) $(CFLAGS) $^ $(OBJFILES) -o $@
 

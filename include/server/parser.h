@@ -36,5 +36,6 @@ void add_activator_range(parser_transition* transition, uint8_t start, uint8_t e
 void add_activator_except(parser_transition* transition, uint8_t* exceptions, size_t total_exception);
 void add_activator(parser_transition* transition, uint8_t c);
 bool isFinal(parser_state* state);
+int transit_to(struct selector_key* key, parser_t* parser, unsigned int current_state_id, unsigned int to_state_id);
 
 #endif // !PARSER_H

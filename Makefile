@@ -15,12 +15,13 @@ ifneq ($(words $(subst :, ,$(abs_srctree))), 1)
 	$(error source directory cannot contain spaces or colons)
 endif
 
-OBJFILES	= $(wildcard $(OBJDIR)/*.o)
 
 SRCDIR	:= $(abs_srctree)/src
 BINDIR	:= $(abs_srctree)/bin
 OBJDIR	:= $(abs_srctree)/obj
 INCLUDE	:= $(abs_srctree)/include
+
+OBJFILES	= $(wildcard $(OBJDIR)/*.o)
 
 TEST_OBJFILES	= $(wildcard $(TEST_OBJDIR)/*.o)
 TEST_BINDIR 	:= $(abs_srctree)/bin/test

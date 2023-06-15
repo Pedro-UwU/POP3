@@ -1,5 +1,5 @@
 # Source files
-SRC := logger.c 
+SRC := $(wildcard *.c)
 
 # Object files
 OBJ = $(SRC:%.c=$(OBJDIR)/%.o)
@@ -11,7 +11,7 @@ EXEC :=
 # Build rule
 all: $(OBJ)
 
-$(OBJ): $(SRC)
+$(OBJ): $(OBJDIR)/%.o: %.c
 	@echo -e ${BLUE}${BOLD}"==> Utils object: $<"${NOCOLOR}
 	$(CC) $(CFLAGS) -c -o $@ $<
 

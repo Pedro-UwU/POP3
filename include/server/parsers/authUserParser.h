@@ -7,6 +7,7 @@
 #include <server/parser.h>
 #include <server/buffer.h>
 
+
 typedef struct {
     parser_t * parser;
     size_t state_id;
@@ -16,8 +17,13 @@ typedef struct {
 
     size_t total_cmd;
     size_t total_uname;
+    int needs_to_transit;
     bool ended;
+    bool quit;
+    unsigned int error_code;
 } auth_user_parser_t;
+
+
 
 void conf_auth_user_parser(void);
 void free_auth_user_parser_conf(void);

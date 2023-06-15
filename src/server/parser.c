@@ -4,6 +4,38 @@
 #include <utils/logger.h>
 #include <stddef.h>
 
+int transit_to(struct selector_key* key, parser_t* parser, unsigned int current_state_id, unsigned int to_state_id) {
+    if (parser == NULL) {
+        log(ERROR, "NULL parser in transit_to");
+        return -1;
+    }
+
+    parser_transition* state_transitions = parser->transitions[current_state_id];    
+    for (size_t i = 0; i < parser->transitions_per_state[current_state_id]; i++) {
+        if (state_transitions[i].to_state == to_state_id) {
+            parser_state* from_state = &parser->states[state_transitions[i].from_state];
+            parser_state* to_state = &parser->states[state_transitions[i].to_state];
+            if (from_state->on_departure != NULL) {
+                from_state->on_departure(key, NULL);
+            }
+            if (to_state->on_arrival != NULL) {
+                to_state->on_arrival(key, NULL);
+            }
+            return to_state->id;
+        }
+    }
+
+    //If not matching transition
+    if (parser->states[current_state_id].on_departure != NULL) {
+        parser->states[current_state_id].on_departure(key, NULL);
+    }
+
+    if (parser->error_state->on_arrival != NULL) {
+        parser->error_state->on_arrival(key, NULL);
+    }
+    return parser->error_state->id;
+}
+
 int process_char(struct selector_key* key, parser_t * parser, unsigned int current_state_id, uint8_t c) {
     if (parser == NULL) {
         log(ERROR, "NULL parser in process_char");
