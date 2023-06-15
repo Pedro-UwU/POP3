@@ -25,8 +25,10 @@ unsigned greeting_write(struct selector_key * key) {
        log(ERROR, "Greeting message returned strange written bytes: %d", (int)written);
        return ERROR_POP3;
    }
+
+   selector_set_interest_key(key, OP_READ);
    log(INFO, "Greeting sent to fd %d", key->fd);
-   return DONE; // TODO: RETURN AUTH_READ
+   return AUTH_USER_READ; 
 
 }
 #endif /* ifndef GREETING */

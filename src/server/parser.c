@@ -112,3 +112,7 @@ void add_activator(parser_transition *transition, uint8_t c) {
         }
         transition->activators[activator_index] = true;
 }
+
+bool isFinal(parser_state* state) {
+    return state->is_final;
+}

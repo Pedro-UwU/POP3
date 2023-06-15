@@ -6,6 +6,7 @@
 #include <server/pop3.h>
 #include <server/states/greeting.h>
 #include <server/selector.h>
+#include <server/authUser.h>
 #include <stdlib.h>
 #include <stdbool.h>
 #include <unistd.h>
@@ -36,7 +37,9 @@ const struct state_definition client_states[] = {
         .on_write_ready = greeting_write,
     },
     {
-        .state = AUTH_USER_READ
+        .state = AUTH_USER_READ,
+        .on_arrival = initAuthUser,
+        .on_read_ready = auth_user_read,
     },
     {
         .state = DONE,
@@ -109,7 +112,11 @@ void pop3_handle_write(struct selector_key* key) {
 }
 
 void pop3_handle_read(struct selector_key* key) {
-    // TODO
+    client_data* data = GET_DATA(key);
+    const enum pop3_states status = stm_handler_read(&data->stm, key);
+    if (status == ERROR_POP3 || status == DONE) {
+        close_connection(key);
+    }
 }
 
 void pop3_handle_close(struct selector_key* key) {

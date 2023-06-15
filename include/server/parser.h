@@ -35,5 +35,6 @@ int process_char(struct selector_key* key, parser_t* paser, unsigned int current
 void add_activator_range(parser_transition* transition, uint8_t start, uint8_t end);
 void add_activator_except(parser_transition* transition, uint8_t* exceptions, size_t total_exception);
 void add_activator(parser_transition* transition, uint8_t c);
+bool isFinal(parser_state* state);
 
 #endif // !PARSER_H

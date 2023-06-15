@@ -1,7 +1,9 @@
+#include "server/buffer.h"
 #include <server/pop3.h>
 #include <server/parser.h>
 #include <server/parsers/authUserParser.h>
 #include <server/selector.h>
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <utils/logger.h>
@@ -35,6 +37,7 @@ static void checkCommand(struct selector_key* key, uint8_t c) {
     auth_user_parser_t* auth_parser = &data->parser.auth_user_parser;
     if (strcmp(USER_CMD, auth_parser->cmd) != 0) {
         log(DEBUG, "ERROR, invalid command");
+        return; //TODO HANDLE ERROR
         // goto error;
     }
     log(DEBUG, "USER Command detected");
@@ -106,5 +109,26 @@ void free_auth_user_parser_conf(void) {
 }
 
 void init_auth_user_parser(auth_user_parser_t *auth_parser) {
-    
+    if (auth_parser == NULL) {
+        log(ERROR, "Trying to initialize NULL auth parser");
+        return;
+    }
+    memset(&auth_parser->cmd, 0, MAX_CMD_LEN);
+    memset(&auth_parser->uname, 0, MAX_USER_NAME);
+    auth_parser->parser = &auth_user_inner_parser;
+    auth_parser->state_id = auth_parser->parser->initial_state->id;
+    auth_parser->total_cmd = 0;
+    auth_parser->total_uname = 0;
+    auth_parser->ended = false;
+}
+
+int auth_user_parse(struct selector_key* key, auth_user_parser_t* auth_parser, struct buffer* buffer) {
+    int state = 0;
+    while(buffer_can_read(buffer) && auth_parser->ended != true) {
+        int state = process_char(key, auth_parser->parser, auth_parser->state_id, buffer_read(buffer));
+        if (state == -1 || auth_parser->parser->states[state].is_final == true)  {
+            auth_parser->ended = true;
+        }
+    }
+    return state;
 }
