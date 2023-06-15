@@ -12,7 +12,7 @@ int process_char(struct selector_key* key, parser_t * parser, unsigned int curre
 
     size_t activator_index = 0;
     
-    if (c < 20 || c > 127) { // Printable ASCII
+    if (c < 32 || c > 127) { // Printable ASCII
         if (c == '\r') {
             activator_index = ACTIVATORS_LEN - 2; 
         } else if (c == '\n') {

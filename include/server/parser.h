@@ -6,7 +6,7 @@
 #include <stdint.h>
 
 // Delete - ' ' + 1 + \n + \r
-#define ACTIVATORS_LEN (127 - 20 + 1 + 2) 
+#define ACTIVATORS_LEN (127 - 32 + 1 + 2) 
 typedef void (*parser_state_function)(struct selector_key *key, uint8_t c);
 
 typedef struct parser_state {

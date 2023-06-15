@@ -24,7 +24,7 @@ unsigned auth_user_read(struct selector_key* key) {
 
     size_t read_limit = 0;
     uint8_t * readBuffer = buffer_write_ptr(&data->read_buffer_client, &read_limit);
-    log(DEBUG, "read_limit: %d", read_limit);
+    log(DEBUG, "read_limit: %d", (int)read_limit);
     size_t read_count = recv(key->fd, readBuffer, read_limit, 0);
     if (read_count > 0) 
         log(DEBUG, "auth_user_read read %ld bytes", read_count);
@@ -34,7 +34,7 @@ unsigned auth_user_read(struct selector_key* key) {
 
     buffer_write_adv(&data->read_buffer_client, read_count);
 
-    int state = auth_user_parse(key, &data->parser.auth_user_parser, &data->write_buffer_client);
+    int state = auth_user_parse(key, &data->parser.auth_user_parser, &data->read_buffer_client);
 
 
     if (state == -1) {

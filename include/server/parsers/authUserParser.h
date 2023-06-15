@@ -11,8 +11,8 @@ typedef struct {
     parser_t * parser;
     size_t state_id;
 
-    char uname[MAX_USER_NAME];
-    char cmd[MAX_CMD_LEN];
+    char uname[MAX_USER_NAME + 1];
+    char cmd[MAX_CMD_LEN + 1];
 
     size_t total_cmd;
     size_t total_uname;

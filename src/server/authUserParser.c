@@ -30,6 +30,8 @@ static void saveCommand(struct selector_key* key, uint8_t c) {
         return;
     }
     auth_parser->cmd[auth_parser->total_cmd] = c;
+    auth_parser->total_cmd++;
+    log(DEBUG, "Read %s", auth_parser->cmd);
 }
 
 static void checkCommand(struct selector_key* key, uint8_t c) {
@@ -47,10 +49,12 @@ static parser_state auth_states[] = {
     {
         .id = S0,
         .on_arrival = saveCommand,
+        .on_departure = NULL,
     },
     {
         .id = S1,
         .on_arrival = checkCommand,
+        .on_departure = NULL,
     },
     {
         .id = SERR
@@ -59,7 +63,7 @@ static parser_state auth_states[] = {
 
 static parser_transition S0_S0 = {
         .from_state = &auth_states[S0],
-        .to_state = &auth_states[S1],
+        .to_state = &auth_states[S0],
 };
 
 static parser_transition S0_S1 = {
@@ -72,23 +76,29 @@ static size_t* transitions_per_state_list;
 
 void conf_auth_user_parser(void) {
 
+    memset(S0_S1.activators, 0, ACTIVATORS_LEN*sizeof(bool));
+    memset(S0_S0.activators, 0, ACTIVATORS_LEN*sizeof(bool));
+
     add_activator(&S0_S1, ' ');
-    add_activator_except(&S0_S0, (uint8_t*)"\r\n", 2);
+    add_activator_except(&S0_S0, (uint8_t*)" \r\n", 3);
 
     transitions_per_state_list = malloc((SERR+1) *  sizeof(size_t));
-    transitions_per_state_list[S0] = S0_TOTAL_TRANSITIONS * sizeof(parser_transition);
+    transitions_per_state_list[S0] = S0_TOTAL_TRANSITIONS;
     transitions_per_state_list[S1] = 0;
     transitions_per_state_list[SERR] = 0;
 
-    parser_transition* S0_trans = malloc(transitions_per_state_list[S0]);
-    parser_transition* S1_trans = malloc(transitions_per_state_list[S1]);
-    parser_transition* SERR_trans = malloc(transitions_per_state_list[SERR]);
+    parser_transition* S0_trans = malloc(transitions_per_state_list[S0] * sizeof(parser_transition));
+    parser_transition* S1_trans = malloc(transitions_per_state_list[S1] * sizeof(parser_transition));
+    parser_transition* SERR_trans = malloc(transitions_per_state_list[SERR] * sizeof(parser_transition));
 
 
     transitions_list = malloc((SERR+1) * sizeof(parser_transition*));
     transitions_list[S0] = S0_trans;
     transitions_list[S1] = S1_trans;
     transitions_list[SERR] = SERR_trans;
+
+    transitions_list[S0][0] = S0_S0;
+    transitions_list[S0][1] = S0_S1;
 
 
     auth_user_inner_parser.states = auth_states;
