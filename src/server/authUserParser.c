@@ -87,14 +87,6 @@ static void saveUserChar(struct selector_key* key, uint8_t c) {
     return;
 }
 
-static void toggleQuit(struct selector_key* key, uint8_t c) {
-    client_data* data = GET_DATA(key);
-    auth_user_parser_t* auth_parser = &data->parser.auth_user_parser;
-    auth_parser->quit = true;
-    return;
-}
-
-
 static void consumeChar(struct selector_key* key, uint8_t c) {
     return;
 }
@@ -113,9 +105,9 @@ static void processCommand(struct selector_key* key, uint8_t c) {
     client_data* data = GET_DATA(key);
     auth_user_parser_t* auth_parser = &data->parser.auth_user_parser;
     
-    if (auth_parser->error_code != NO_ERROR || auth_parser->quit == true) {
+    if (auth_parser->error_code != NO_ERROR || strcmp(auth_parser->cmd, QUIT_CMD) == 0) {
         auth_parser->ended = true;
-    } else if (strcmp(auth_parser->uname, "PEDRO") != 0) { // TODO check real username
+    } else if (auth_parser->total_uname > 0 && strcmp(auth_parser->uname, "PEDRO") != 0) { // TODO check real username
         auth_parser->error_code = INVALID_USER;
     } else {
         auth_parser->user_found = true;
@@ -129,7 +121,6 @@ static parser_state auth_states[] = {
     {
         .id = S0,
         .on_arrival = saveCommand,
-        .on_departure = NULL,
     },
     {
         .id = S1,
@@ -142,7 +133,6 @@ static parser_state auth_states[] = {
     },
     {
         .id = S3, 
-        .on_arrival = toggleQuit,
     },
     {
         .id = S4,
@@ -237,6 +227,7 @@ void conf_auth_user_parser(void) {
 
     add_activator_except(&transitions_list[S0][0], (uint8_t *)" \r\n", strlen(" \r\n"));        // For the first command
     add_activator(&transitions_list[S0][1], ' ');                                               // Space after command
+    add_activator(&transitions_list[S0][2], '\r');                                              // From S0 to S5 in case there's no space
     add_activator_except(&transitions_list[S2][0], (uint8_t*) "\r\n", 3);                       // From S2 to S2 saving the username
     add_activator(&transitions_list[S2][1], '\r');                                              // From S2 to S5
     add_activator(&transitions_list[S3][0], '\r');                                              // From S3 to S5 
