@@ -19,6 +19,7 @@ typedef struct {
     size_t total_uname;
     int needs_to_transit;
     bool ended;
+    bool user_found;
     bool quit;
     unsigned int error_code;
 } auth_user_parser_t;

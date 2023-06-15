@@ -31,6 +31,7 @@ enum auth_errors {
     LONG_PARAM,
     LONG_COMMAND,
     INVALID_USER,
+    UNKNOWN_ERROR,
 };
 
 static parser_t auth_user_inner_parser;
@@ -98,6 +99,16 @@ static void consumeChar(struct selector_key* key, uint8_t c) {
     return;
 }
 
+static void consumeCharAndSetError(struct selector_key* key, uint8_t c) {
+    client_data* data = GET_DATA(key);
+    auth_user_parser_t* auth_parser = &data->parser.auth_user_parser;
+    if (auth_parser->error_code == NO_ERROR) {
+        auth_parser->error_code = UNKNOWN_ERROR;
+    }
+    return;
+}
+
+
 static void processCommand(struct selector_key* key, uint8_t c) {
     client_data* data = GET_DATA(key);
     auth_user_parser_t* auth_parser = &data->parser.auth_user_parser;
@@ -107,6 +118,7 @@ static void processCommand(struct selector_key* key, uint8_t c) {
     } else if (strcmp(auth_parser->uname, "PEDRO") != 0) { // TODO check real username
         auth_parser->error_code = INVALID_USER;
     } else {
+        auth_parser->user_found = true;
         log(DEBUG, "Logged user PEDRO");
     }
 
@@ -146,7 +158,7 @@ static parser_state auth_states[] = {
     },
     {
         .id = SERR,
-        .on_arrival = consumeChar,
+        .on_arrival = consumeCharAndSetError,
         .is_final = false, // Has to consume everything until a \r\n
     }
 };
@@ -262,6 +274,7 @@ void init_auth_user_parser(auth_user_parser_t *auth_parser) {
     auth_parser->total_uname = 0;
     auth_parser->ended = false;
     auth_parser->quit = false;
+    auth_parser->user_found = false;
     auth_parser->needs_to_transit = -1;
     auth_parser->error_code = NO_ERROR;
 }
