@@ -17,8 +17,8 @@ typedef struct parser_state {
 } parser_state;
 
 typedef struct parser_transition {
-    parser_state* from_state;
-    parser_state* to_state;
+    unsigned from_state;
+    unsigned to_state;
     bool activators[ACTIVATORS_LEN];
 } parser_transition;
 

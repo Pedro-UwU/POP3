@@ -28,13 +28,15 @@ int process_char(struct selector_key* key, parser_t * parser, unsigned int curre
     parser_transition* state_transitions = parser->transitions[current_state_id];    
     for (size_t i = 0; i < parser->transitions_per_state[current_state_id]; i++) {
         if (state_transitions[i].activators[activator_index] == true) {
-            if (state_transitions[i].from_state->on_departure != NULL) {
-                state_transitions[i].from_state->on_departure(key, c);
+            parser_state* from_state = &parser->states[state_transitions[i].from_state];
+            parser_state* to_state = &parser->states[state_transitions[i].to_state];
+            if (from_state->on_departure != NULL) {
+                from_state->on_departure(key, c);
             }
-            if (state_transitions[i].to_state->on_arrival != NULL) {
-                state_transitions[i].to_state->on_arrival(key, c);
+            if (to_state->on_arrival != NULL) {
+                to_state->on_arrival(key, c);
             }
-            return state_transitions[i].to_state->id;
+            return to_state->id;
         }
     }
 
