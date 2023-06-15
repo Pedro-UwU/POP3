@@ -32,6 +32,7 @@ unsigned auth_user_read(struct selector_key* key) {
     }
     if (read_count == 0) {
         log(DEBUG, "Socket %d closed connections", key->fd);
+        return DONE;
     }
 
     buffer_write_adv(&data->read_buffer_client, read_count);
@@ -43,7 +44,11 @@ unsigned auth_user_read(struct selector_key* key) {
         return ERROR_POP3;
     } 
     if (data->parser.auth_user_parser.ended == true) {
-        return DONE;
+        if (data->parser.auth_user_parser.error_code == 0) {
+            return DONE;
+        } else {
+            return ERROR_POP3; // TODO GO TO AUTH_ERROR WITH AN ERROR CODE
+        }
     }
     return AUTH_USER_READ;
 }
