@@ -1,22 +1,22 @@
 #ifndef AUTH_USER_PARSER_H
 #define AUTH_USER_PARSER_H
-#include <stdbool.h>
-#define MAX_USER_NAME 40 // RFC Defined
+#define MAX_ARG_LEN 40 // RFC Defined
 #define MAX_CMD_LEN 5
 
 #include <server/parser.h>
 #include <server/buffer.h>
+#include <pop3def.h>
+#include <stdbool.h>
 
 
 typedef struct {
     parser_t * parser;
     size_t state_id;
-
-    char uname[MAX_USER_NAME + 1];
-    char cmd[MAX_CMD_LEN + 1];
-
     size_t total_cmd;
     size_t total_uname;
+    char uname[MAX_ARG_LEN + 1];
+    char cmd[MAX_CMD_LEN + 1];
+
     int needs_to_transit;
     bool ended;
     bool user_found;

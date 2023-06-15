@@ -11,10 +11,6 @@
 #include <stdint.h>
 #include <string.h>
 
-#define USER_CMD "USER"
-#define QUIT_CMD "QUIT"
-
-
 enum auth_user_states {
     S0 = 0,
     S1,
@@ -77,7 +73,7 @@ static void saveUserChar(struct selector_key* key, uint8_t c) {
     }
     client_data* data = GET_DATA(key);
     auth_user_parser_t* auth_parser = &data->parser.auth_user_parser;
-    if (auth_parser->total_uname >= MAX_USER_NAME) {
+    if (auth_parser->total_uname >= MAX_ARG_LEN) {
         auth_parser->needs_to_transit = SERR;        
         auth_parser->error_code = LONG_PARAM;
         return;
@@ -254,11 +250,11 @@ void free_auth_user_parser_conf(void) {
 
 void init_auth_user_parser(auth_user_parser_t *auth_parser) {
     if (auth_parser == NULL) {
-        log(ERROR, "Trying to initialize NULL auth parser");
+        log(ERROR, "Trying to initialize NULL auth user parser");
         return;
     }
     memset(&auth_parser->cmd, 0, MAX_CMD_LEN);
-    memset(&auth_parser->uname, 0, MAX_USER_NAME);
+    memset(&auth_parser->uname, 0, MAX_ARG_LEN);
     auth_parser->parser = &auth_user_inner_parser;
     auth_parser->state_id = auth_parser->parser->initial_state->id;
     auth_parser->total_cmd = 0;

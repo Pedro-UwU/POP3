@@ -6,6 +6,7 @@
 #include <stdint.h>
 #include <server/buffer.h>
 #include <server/parsers/authUserParser.h>
+#include <server/parsers/authPassParser.h>
 
 #define GET_DATA(x) ((client_data*)(x)->data)
 //32 kB of buffer
@@ -15,6 +16,7 @@ typedef struct client_data { // Add more items as we need them
     struct state_machine stm;
     union { // Parsers 
         auth_user_parser_t auth_user_parser;
+        auth_pass_parser_t auth_pass_parser;
     } parser;
 
     struct sockaddr_storage client_address;
