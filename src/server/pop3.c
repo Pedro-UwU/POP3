@@ -36,6 +36,9 @@ const struct state_definition client_states[] = {
         .on_write_ready = greeting_write,
     },
     {
+        .state = AUTH_USER_READ
+    },
+    {
         .state = DONE,
     },
     {
