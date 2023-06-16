@@ -59,7 +59,38 @@ unsigned auth_user_read(struct selector_key* key) {
 
 
 unsigned auth_user_write(struct selector_key * key) {
+    /*
+     * if buffer_can_read(write_buffer) // There's something to send in the buffer.
+     *     send(msg)
+     *     if sent < 0:
+     *         ERROR
+     *     if sent == 0:
+     *         CONNECTION_CLOSED
+     *     if sent == len(msg) // If we sent all the message
+     *         client_data->is_sending = false // Indicate that we are no sending anymore
+     *         return NEXT_STATE
+     * else if is_sending:
+     *     // Shouldn't get here because the if statement should turn the flag off if all the message was sen't, but por las dudas
+     *     is_sending = false;
+     *     ret NEXT_STATE
+     * else:
+     *     // There's nothing in the buffer and it's not sending anything, so I should generate the message
+     *     msg = build_msg();
+     *     send(msg)
+     *     if sent < 0:
+     *         ERROR
+     *     if sent == 0:
+     *         CONNECTION_CLOSED
+     *     if sent == len(msg):
+     *         // All the msg was sent
+     *         ret NEXT_STATE
+     *     is_sending = true
+     *     ret NEXT_STATE
+     */
     client_data* data = GET_DATA(key);
+    if (buffer_can_read(data->write_buffer_data)) {
+
+    }
     if (data->err_code == NO_ERROR) {
         size_t written = 0;
         char buff[MAX_RSP_LEN] = {0};
