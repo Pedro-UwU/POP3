@@ -1,3 +1,4 @@
+#include "pop3def.h"
 #include "server/buffer.h"
 #include "utils/logger.h"
 #include <server/pop3.h>
@@ -6,6 +7,9 @@
 #include <server/authUser.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <stdio.h>
+#include <string.h>
+#include <sys/socket.h>
 
 void initAuthUser(const unsigned state, struct selector_key* key) {
     log(DEBUG, "Initializing new Auth User Parser");
@@ -55,5 +59,24 @@ unsigned auth_user_read(struct selector_key* key) {
 
 
 unsigned auth_user_write(struct selector_key * key) {
-   client_data* data = GET_DATA(key);
+    client_data* data = GET_DATA(key);
+    if (data->err_code == NO_ERROR) {
+        size_t written = 0;
+        char buff[MAX_RSP_LEN] = {0};
+        snprintf(buff, MAX_RSP_LEN, "+OK %s is a real hoopy frood" , data->user);
+        size_t rsp_len = strlen(buff);
+        written = send(key->fd, buff, MAX_RSP_LEN, 0);
+
+        if (written != rsp_len) {
+            log(ERROR, "Writing response to user, socket %d", key->fd);
+            return UNKNOWN_ERROR;
+        }
+
+        // TODO check that if written > 0, should send the rest of the response in the next iteration 
+        selector_set_interest_key(key, OP_READ); 
+        return DONE;
+    } else { // TODO send +ERR message
+        return DONE;
+    }
+
 }

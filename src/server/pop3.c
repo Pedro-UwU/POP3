@@ -1,6 +1,7 @@
 #ifndef POP3
 #define POP3
 
+#include "pop3def.h"
 #include "server/buffer.h"
 #include <server/stm.h>
 #include <server/pop3.h>
@@ -9,6 +10,7 @@
 #include <server/authUser.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <string.h>
 #include <unistd.h>
 #include <utils/logger.h>
 #include <sys/socket.h>
@@ -101,11 +103,13 @@ static void init_new_client_data(client_data* data, int new_fd, struct sockaddr_
     data->stm.initial = GREETING_WRITE;
     data->stm.states = client_states;
     data->stm.max_state = ERROR_POP3;
+    data->err_code = NO_ERROR;
     data->closed = false;
     data->client_fd = new_fd;
     data->client_address = client_address; 
     buffer_init(&data->read_buffer_client, BUFFER_SIZE, data->read_buffer_data);
     buffer_init(&data->write_buffer_client, BUFFER_SIZE, data->write_buffer_data);
+    memset(data->user, 0, MAX_ARG_LEN + 1); // Set user buffer to null;
 
     stm_init(&data->stm);
 }

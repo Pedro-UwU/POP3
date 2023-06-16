@@ -22,15 +22,16 @@ typedef struct client_data { // Add more items as we need them
 
     struct sockaddr_storage client_address;
     bool closed;
+    unsigned err_code;
+    uint8_t read_buffer_data[BUFFER_SIZE];
+    uint8_t write_buffer_data[BUFFER_SIZE];
+    uint8_t user[MAX_ARG_LEN + 1]; // NULL terminated username
     int client_fd;
     struct buffer write_buffer_client;
     struct buffer read_buffer_client;
 
-    uint8_t read_buffer_data[BUFFER_SIZE];
-    uint8_t write_buffer_data[BUFFER_SIZE];
-    uint8_t user[MAX_ARG_LEN + 1]; // NULL terminated username
 
-} client_data;
+    } client_data;
 
 enum pop3_states {
     GREETING_WRITE = 0,
