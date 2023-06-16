@@ -52,3 +52,8 @@ unsigned auth_user_read(struct selector_key* key) {
     }
     return AUTH_USER_READ;
 }
+
+
+unsigned auth_user_write(struct selector_key * key) {
+   client_data* data = GET_DATA(key);
+}

@@ -42,6 +42,13 @@ const struct state_definition client_states[] = {
         .on_read_ready = auth_user_read,
     },
     {
+        .state = AUTH_USER_WRITE,
+        .on_write_ready = auth_user_write,
+    },
+    {
+        .state = AUTH_PASS_READ,
+    },
+    {
         .state = DONE,
     },
     {

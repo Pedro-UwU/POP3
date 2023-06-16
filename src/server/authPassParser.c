@@ -1,3 +1,4 @@
+#include "server/buffer.h"
 #include <pop3def.h>
 #include <server/pop3.h>
 #include <server/parser.h>
@@ -16,12 +17,6 @@ static void save_pass(struct selector_key* key, uint8_t c);
 static void process_command(struct selector_key* key, uint8_t c);
 static void error_arrival(struct selector_key* key, uint8_t c);
 
-enum auth_pass_errors {
-    NO_ERROR = 0,
-    INVALID_CMD,
-    INVALID_CHAR,
-    WRONG_PASSWORD,
-};
 
 enum auth_pass_states {
     S0 = 0,
@@ -95,7 +90,7 @@ void free_auth_pass_parser(void) {
     free(transitions_list);
 }
 
-void init_pass_user_parser(auth_pass_parser_t* parser) {
+void init_auth_pass_parser(auth_pass_parser_t* parser) {
     if (parser == NULL) {
         log(ERROR, "Trying to initialize NULL auth pass parser");
         return;
@@ -111,6 +106,18 @@ void init_pass_user_parser(auth_pass_parser_t* parser) {
     memset(parser->cmd, 0, MAX_CMD_LEN);
     memset(parser->arg, 0, MAX_ARG_LEN);
 }
+
+int auth_pass_parse(struct selector_key* key, auth_pass_parser_t* auth_pass_parser, struct buffer* buffer) {
+    int state = NO_ERROR;
+    while( state == NO_ERROR && buffer_can_read(buffer) && auth_pass_parser->ended != true) {
+        state = process_char(key, auth_pass_parser->parser, auth_pass_parser->state_id, buffer_read(buffer));
+        auth_pass_parser->state_id = state;
+    }
+    log(DEBUG, "Current Pass Parser State %ld", auth_pass_parser->state_id);
+    return state; 
+}
+
+
 
 static void save_cmd(struct selector_key* key, uint8_t c) {
     client_data* data = GET_DATA(key);
@@ -159,5 +166,4 @@ static void error_arrival(struct selector_key* key, uint8_t c) {
     auth_pass_parser_t* parser = &data->parser.auth_pass_parser;
     parser->err_value = INVALID_CHAR;
     parser->ended = true;
-
 }

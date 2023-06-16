@@ -80,3 +80,4 @@ temp.txt
 # Project folders
 bin/
 obj/
+.clangd

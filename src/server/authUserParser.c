@@ -22,14 +22,6 @@ enum auth_user_states {
     SERR, 
 };
 
-enum auth_errors {
-    NO_ERROR = 0,
-    LONG_PARAM,
-    LONG_COMMAND,
-    INVALID_USER,
-    UNKNOWN_ERROR,
-};
-
 static parser_t auth_user_inner_parser;
 
 static void saveCommand(struct selector_key* key, uint8_t c) {
@@ -37,7 +29,7 @@ static void saveCommand(struct selector_key* key, uint8_t c) {
     auth_user_parser_t* auth_parser = &data->parser.auth_user_parser;
     if (auth_parser->total_cmd >= MAX_CMD_LEN) {
         auth_parser->needs_to_transit = SERR;
-        auth_parser->error_code = LONG_COMMAND;
+        auth_parser->error_code = LONG_CMD;
         return;
     }
     auth_parser->cmd[auth_parser->total_cmd] = c;

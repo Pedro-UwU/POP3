@@ -21,7 +21,7 @@ typedef struct {
 
 void conf_auth_pass_parser(void);
 void free_auth_pass_parser(void);
-void init_auth_pass_parser(void);
+void init_auth_pass_parser(auth_pass_parser_t* parser);
 int auth_pass_parse(struct selector_key* key, auth_pass_parser_t* auth_pass_parser_t, struct buffer* buffer);
 
 #endif // !AUTH_PASS_H>

@@ -1,7 +1,5 @@
 #ifndef AUTH_USER_PARSER_H
 #define AUTH_USER_PARSER_H
-#define MAX_ARG_LEN 40 // RFC Defined
-#define MAX_CMD_LEN 5
 
 #include <server/parser.h>
 #include <server/buffer.h>
