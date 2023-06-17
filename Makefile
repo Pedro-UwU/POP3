@@ -21,9 +21,7 @@ BINDIR	:= $(abs_srctree)/bin
 OBJDIR	:= $(abs_srctree)/obj
 INCLUDE	:= $(abs_srctree)/include
 
-OBJFILES	= $(wildcard $(OBJDIR)/*.o)
-
-TEST_OBJFILES	= $(wildcard $(TEST_OBJDIR)/*.o)
+TEST_OBJFILES	=  $(wildcard $(TEST_OBJDIR)/*.o)
 TEST_BINDIR 	:= $(abs_srctree)/bin/test
 TEST_OBJDIR	:= $(abs_srctree)/obj/test
 TEST_SRCDIR 	:= $(abs_srctree)/test
@@ -39,7 +37,7 @@ CFLAGS	:= -g -std=c11 -pedantic \
 
 
 export MAKE CC CFLAGS LDLIBS
-export SRCDIR BINDIR INCLUDE OBJDIR OBJFILES
+export SRCDIR BINDIR INCLUDE OBJDIR
 export TEST_SRCDIR TEST_BINDIR TEST_OBJDIR TEST_OBJFILES
 
 # Bash Colors
@@ -76,4 +74,4 @@ clean:
 	$(MAKE) -C $(SERVER) clean
 
 
-.PHONY: all test clean
+.PHONY: all test clean force
