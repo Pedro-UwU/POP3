@@ -35,7 +35,7 @@ int main(void)
 
         int masterSocket = createTCPSocketServer(port);
         if (masterSocket < 0) {
-                log(ERROR, "Couln't create master socket");
+                log(FATAL, "Couln't create master socket");
                 goto finally;
         }
 
