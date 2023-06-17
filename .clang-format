@@ -2,7 +2,7 @@
 #
 # clang-format configuration file. Intended for clang-format >= 11.
 #
-# Based on 
+# Based on
 # https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/.clang-format
 #
 # For more information, see:
@@ -56,8 +56,8 @@ BreakConstructorInitializersBeforeComma: false
 BreakConstructorInitializers: BeforeComma
 BreakAfterJavaFieldAnnotations: false
 BreakStringLiterals: false
-ColumnLimit: 80
-CommentPragmas: '^ IWYU pragma:'
+ColumnLimit: 100
+CommentPragmas: "^ IWYU pragma:"
 CompactNamespaces: false
 ConstructorInitializerAllOnOneLineOrOnePerLine: false
 ConstructorInitializerIndentWidth: 8
@@ -70,9 +70,9 @@ FixNamespaceComments: false
 
 IncludeBlocks: Preserve
 IncludeCategories:
-  - Regex: '.*'
+  - Regex: ".*"
     Priority: 1
-IncludeIsMainRegex: '(Test)?$'
+IncludeIsMainRegex: "(Test)?$"
 IndentCaseLabels: false
 IndentGotoLabels: false
 IndentPPDirectives: None
@@ -81,8 +81,8 @@ IndentWrappedFunctionNames: false
 JavaScriptQuotes: Leave
 JavaScriptWrapImports: true
 KeepEmptyLinesAtTheStartOfBlocks: false
-MacroBlockBegin: ''
-MacroBlockEnd: ''
+MacroBlockBegin: ""
+MacroBlockEnd: ""
 MaxEmptyLinesToKeep: 1
 NamespaceIndentation: None
 ObjCBinPackProtocolList: Auto
@@ -120,4 +120,3 @@ SpacesInSquareBrackets: false
 Standard: c++11
 TabWidth: 8
 UseTab: Never
-...
