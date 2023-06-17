@@ -86,28 +86,30 @@ unsigned auth_user_write(struct selector_key * key) {
      *         ret NEXT_STATE
      *     is_sending = true
      *     ret NEXT_STATE
-     */
+     *
+    */ 
     client_data* data = GET_DATA(key);
-    if (buffer_can_read(data->write_buffer_data)) {
-
-    }
-    if (data->err_code == NO_ERROR) {
-        size_t written = 0;
-        char buff[MAX_RSP_LEN] = {0};
-        snprintf(buff, MAX_RSP_LEN, "+OK %s is a real hoopy frood" , data->user);
-        size_t rsp_len = strlen(buff);
-        written = send(key->fd, buff, MAX_RSP_LEN, 0);
-
-        if (written != rsp_len) {
-            log(ERROR, "Writing response to user, socket %d", key->fd);
-            return UNKNOWN_ERROR;
+    if (buffer_can_read(&data->write_buffer_client)) {
+        ssize_t total_bytes_to_send = 0;
+        uint8_t* bytes_to_send = buffer_read_ptr(&data->write_buffer_client, &total_bytes_to_send);
+        ssize_t bytes_sent = send(key->fd, bytes_to_send, total_bytes_to_send, 0); // TODO Check flags
+        if (bytes_sent < 0) {
+            data->is_sending = false;
+            data->err_code = UNKNOWN_ERROR; // TODO Check if a different Error code is correct
+            return ERROR_POP3;
         }
-
-        // TODO check that if written > 0, should send the rest of the response in the next iteration 
-        selector_set_interest_key(key, OP_READ); 
-        return DONE;
-    } else { // TODO send +ERR message
-        return DONE;
+        if (bytes_sent == 0) {
+            return DONE;
+        }
+        if (bytes_sent == total_bytes_to_send) {
+            data->is_sending = false;
+            if (data->err_code == NO_ERROR) {
+                return AUTH_PASS_READ;
+            } else {
+                return AUTH_USER_READ; // Ask for the user again
+            }
+        } else {
+            return AUTH_USER_WRITE;
+        }
     }
-
 }

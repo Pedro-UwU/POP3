@@ -22,6 +22,7 @@ typedef struct client_data { // Add more items as we need them
 
     struct sockaddr_storage client_address;
     bool closed;
+    bool is_sending;
     unsigned err_code;
     uint8_t read_buffer_data[BUFFER_SIZE];
     uint8_t write_buffer_data[BUFFER_SIZE];
@@ -29,8 +30,6 @@ typedef struct client_data { // Add more items as we need them
     int client_fd;
     struct buffer write_buffer_client;
     struct buffer read_buffer_client;
-
-
     } client_data;
 
 enum pop3_states {

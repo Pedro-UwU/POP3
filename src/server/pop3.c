@@ -77,7 +77,7 @@ void pop3AcceptPassive(struct selector_key* key) {
         return;
     }
 
-    client_data* client_data_ptr = calloc(1, sizeof(client_data));
+    client_data* client_data_ptr = calloc(1, sizeof(client_data)); // TODO: free
     if (client_data_ptr == NULL) {
         log(ERROR, "New client with socket %d can't alloc client data", new_client_socket);
         close(new_client_socket);
@@ -105,6 +105,7 @@ static void init_new_client_data(client_data* data, int new_fd, struct sockaddr_
     data->stm.max_state = ERROR_POP3;
     data->err_code = NO_ERROR;
     data->closed = false;
+    data->is_sending = false;
     data->client_fd = new_fd;
     data->client_address = client_address; 
     buffer_init(&data->read_buffer_client, BUFFER_SIZE, data->read_buffer_data);
