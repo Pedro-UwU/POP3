@@ -97,12 +97,10 @@ static void processCommand(struct selector_key *key, uint8_t c)
         client_data *data = GET_DATA(key);
         auth_user_parser_t *auth_parser = &data->parser.auth_user_parser;
 
-        if (auth_parser->error_code != NO_ERROR ||
-            strcmp(auth_parser->cmd, QUIT_CMD) == 0) {
+        if (auth_parser->error_code != NO_ERROR || strcmp(auth_parser->cmd, QUIT_CMD) == 0) {
                 auth_parser->ended = true;
         } else if (auth_parser->total_uname > 0 &&
-                   strcmp(auth_parser->uname, "PEDRO") !=
-                           0) { // TODO check real username
+                   strcmp(auth_parser->uname, "PEDRO") != 0) { // TODO check real username
                 auth_parser->error_code = INVALID_USER;
         } else {
                 auth_parser->user_found = true;
@@ -185,10 +183,8 @@ static struct parser_transition S5_transitions[] = {
 };
 
 static size_t SERR_total_transitions = 2;
-static struct parser_transition SERR_transitions[] = {
-        { .from_state = SERR, .to_state = SERR },
-        { .from_state = SERR, .to_state = S5 }
-};
+static struct parser_transition SERR_transitions[] = { { .from_state = SERR, .to_state = SERR },
+                                                       { .from_state = SERR, .to_state = S5 } };
 
 static struct parser_transition **transitions_list;
 static size_t *transitions_per_state_list;
@@ -217,8 +213,7 @@ void conf_auth_user_parser(void)
 
         for (int i = 0; i < (SERR + 1); i++) {
                 for (size_t j = 0; j < transitions_per_state_list[i]; j++) {
-                        memset((void *)&transitions_list[i][j].activators, 0,
-                               ACTIVATORS_LEN);
+                        memset((void *)&transitions_list[i][j].activators, 0, ACTIVATORS_LEN);
                 }
         }
 
@@ -231,13 +226,12 @@ void conf_auth_user_parser(void)
                              3); // From S2 to S2 saving the username
         add_activator(&transitions_list[S2][1], '\r'); // From S2 to S5
         add_activator(&transitions_list[S3][0], '\r'); // From S3 to S5
-        add_activator_except(
-                &transitions_list[S4][0], (uint8_t *)"\r",
-                1); // From S4 to S4, consuming every char after Invalid command
+        add_activator_except(&transitions_list[S4][0], (uint8_t *)"\r",
+                             1); // From S4 to S4, consuming every char after Invalid command
         add_activator(&transitions_list[S4][1], '\r'); // From S4 to S5
         add_activator(&transitions_list[S5][0],
                       '\n'); // From S5 to S6, final state
-                //
+        //
 
         add_activator_except(&transitions_list[SERR][0], (uint8_t *)"\r",
                              1); // From SERR to SERR, consumes everything
@@ -248,8 +242,7 @@ void conf_auth_user_parser(void)
         auth_user_inner_parser.initial_state = &auth_states[S0];
         auth_user_inner_parser.error_state = &auth_states[SERR];
         auth_user_inner_parser.transitions = transitions_list;
-        auth_user_inner_parser.transitions_per_state =
-                transitions_per_state_list;
+        auth_user_inner_parser.transitions_per_state = transitions_per_state_list;
 }
 
 void free_auth_user_parser_conf(void)
@@ -282,22 +275,17 @@ int auth_user_parse(struct selector_key *key, auth_user_parser_t *auth_parser,
 {
         int state = 0;
         while (buffer_can_read(buffer) && auth_parser->ended != true) {
-                state = process_char(key, auth_parser->parser,
-                                     auth_parser->state_id,
+                state = process_char(key, auth_parser->parser, auth_parser->state_id,
                                      buffer_read(buffer));
                 auth_parser->state_id = state;
-                if (state == -1 ||
-                    auth_parser->parser->states[state].is_final == true) {
+                if (state == -1 || auth_parser->parser->states[state].is_final == true) {
                         auth_parser->ended = true;
                 } else if (auth_parser->needs_to_transit != -1) {
-                        state = transit_to(key, auth_parser->parser,
-                                           auth_parser->state_id,
+                        state = transit_to(key, auth_parser->parser, auth_parser->state_id,
                                            auth_parser->needs_to_transit);
                         auth_parser->state_id = state;
                         auth_parser->needs_to_transit = -1;
-                        log(DEBUG,
-                            "Auth User Parser Transitioning to state: %d",
-                            state);
+                        log(DEBUG, "Auth User Parser Transitioning to state: %d", state);
                 }
         }
         log(DEBUG, "Current Parser State %ld", auth_parser->state_id);

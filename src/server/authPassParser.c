@@ -89,8 +89,7 @@ void conf_auth_pass_parser(void)
         auth_pass_inner_parser.error_state = &auth_states[SERR];
         auth_pass_inner_parser.initial_state = &auth_states[S0];
         auth_pass_inner_parser.transitions = transitions_list;
-        auth_pass_inner_parser.transitions_per_state =
-                total_transitions_per_state;
+        auth_pass_inner_parser.transitions_per_state = total_transitions_per_state;
 }
 
 void free_auth_pass_parser(void)
@@ -116,14 +115,12 @@ void init_auth_pass_parser(auth_pass_parser_t *parser)
         memset(parser->arg, 0, MAX_ARG_LEN);
 }
 
-int auth_pass_parse(struct selector_key *key,
-                    auth_pass_parser_t *auth_pass_parser, struct buffer *buffer)
+int auth_pass_parse(struct selector_key *key, auth_pass_parser_t *auth_pass_parser,
+                    struct buffer *buffer)
 {
         int state = NO_ERROR;
-        while (state == NO_ERROR && buffer_can_read(buffer) &&
-               auth_pass_parser->ended != true) {
-                state = process_char(key, auth_pass_parser->parser,
-                                     auth_pass_parser->state_id,
+        while (state == NO_ERROR && buffer_can_read(buffer) && auth_pass_parser->ended != true) {
+                state = process_char(key, auth_pass_parser->parser, auth_pass_parser->state_id,
                                      buffer_read(buffer));
                 auth_pass_parser->state_id = state;
         }
@@ -162,8 +159,7 @@ static void process_command(struct selector_key *key, uint8_t c)
         auth_pass_parser_t *parser = &data->parser.auth_pass_parser;
         if (parser->err_value == NO_ERROR) {
                 if (strcmp(parser->cmd, PASS_CMD) == 0) {
-                        if (strcmp(parser->arg, "12345") !=
-                            0) { // TODO check for a real Password
+                        if (strcmp(parser->arg, "12345") != 0) { // TODO check for a real Password
                                 parser->err_value = WRONG_PASSWORD;
                         }
                 } else if (strcmp(parser->cmd, QUIT_CMD) == 0) {

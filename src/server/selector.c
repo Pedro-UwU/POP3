@@ -270,8 +270,7 @@ static selector_status ensure_capacity(fd_selector s, const size_t n)
                 if (new_size > SIZE_MAX / element_size) { // ver MEM07-C
                         ret = SELECTOR_ENOMEM;
                 } else {
-                        struct item *tmp =
-                                realloc(s->fds, new_size * element_size);
+                        struct item *tmp = realloc(s->fds, new_size * element_size);
                         if (NULL == tmp) {
                                 ret = SELECTOR_ENOMEM;
                         } else {
@@ -333,8 +332,7 @@ void selector_destroy(fd_selector s)
 
 #define INVALID_FD(fd) ((fd) < 0 || (fd) >= ITEMS_MAX_SIZE)
 
-selector_status selector_register(fd_selector s, const int fd,
-                                  const fd_handler *handler,
+selector_status selector_register(fd_selector s, const int fd, const fd_handler *handler,
                                   const fd_interest interest, void *data)
 {
         selector_status ret = SELECTOR_SUCCESS;
@@ -428,8 +426,7 @@ finally:
         return ret;
 }
 
-selector_status selector_set_interest_key(struct selector_key *key,
-                                          fd_interest i)
+selector_status selector_set_interest_key(struct selector_key *key, fd_interest i)
 {
         selector_status ret;
 
@@ -464,8 +461,7 @@ static void handle_iteration(fd_selector s)
                                                 assert(("OP_READ arrived but no handler. bug!" ==
                                                         0));
                                         } else {
-                                                item->handler->handle_read(
-                                                        &key);
+                                                item->handler->handle_read(&key);
                                         }
                                 }
                         }
@@ -475,8 +471,7 @@ static void handle_iteration(fd_selector s)
                                                 assert(("OP_WRITE arrived but no handler. bug!" ==
                                                         0));
                                         } else {
-                                                item->handler->handle_write(
-                                                        &key);
+                                                item->handler->handle_write(&key);
                                         }
                                 }
                         }
@@ -543,8 +538,7 @@ selector_status selector_select(fd_selector s)
 
         s->selector_thread = pthread_self();
 
-        int fds = pselect(s->max_fd + 1, &s->slave_r, &s->slave_w, 0,
-                          &s->slave_t, &emptyset);
+        int fds = pselect(s->max_fd + 1, &s->slave_r, &s->slave_w, 0, &s->slave_t, &emptyset);
 
         if (-1 == fds) {
                 switch (errno) {
@@ -556,12 +550,9 @@ selector_status selector_select(fd_selector s)
                         // ayuda a encontrar casos donde se cierran los fd pero no
                         // se desregistraron
                         for (int i = 0; i < s->max_fd; i++) {
-                                if (FD_ISSET(i, &s->master_r) ||
-                                    FD_ISSET(i, &s->master_w)) {
+                                if (FD_ISSET(i, &s->master_r) || FD_ISSET(i, &s->master_w)) {
                                         if (-1 == fcntl(i, F_GETFD, 0)) {
-                                                fprintf(stderr,
-                                                        "Bad descriptor detected: %d\n",
-                                                        i);
+                                                fprintf(stderr, "Bad descriptor detected: %d\n", i);
                                         }
                                 }
                         }

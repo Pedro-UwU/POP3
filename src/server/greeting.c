@@ -23,9 +23,7 @@ unsigned greeting_write(struct selector_key *key)
         written = send(key->fd, greeting_msg, MSG_LEN, MSG_NOSIGNAL);
 
         if (written != MSG_LEN) {
-                log(ERROR,
-                    "Greeting message returned strange written bytes: %d",
-                    (int)written);
+                log(ERROR, "Greeting message returned strange written bytes: %d", (int)written);
                 return ERROR_POP3;
         }
 

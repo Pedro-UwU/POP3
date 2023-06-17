@@ -73,8 +73,7 @@ int main(void)
                 .handle_close = NULL,
         };
 
-        ss = selector_register(selector, masterSocket, &masterHandler, OP_READ,
-                               NULL);
+        ss = selector_register(selector, masterSocket, &masterHandler, OP_READ, NULL);
 
         if (ss != SELECTOR_SUCCESS) {
                 err_msg = "Error registering master handler";

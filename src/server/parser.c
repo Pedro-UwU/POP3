@@ -4,23 +4,19 @@
 #include <utils/logger.h>
 #include <stddef.h>
 
-int transit_to(struct selector_key *key, parser_t *parser,
-               unsigned int current_state_id, unsigned int to_state_id)
+int transit_to(struct selector_key *key, parser_t *parser, unsigned int current_state_id,
+               unsigned int to_state_id)
 {
         if (parser == NULL) {
                 log(ERROR, "NULL parser in transit_to");
                 return -1;
         }
 
-        parser_transition *state_transitions =
-                parser->transitions[current_state_id];
-        for (size_t i = 0; i < parser->transitions_per_state[current_state_id];
-             i++) {
+        parser_transition *state_transitions = parser->transitions[current_state_id];
+        for (size_t i = 0; i < parser->transitions_per_state[current_state_id]; i++) {
                 if (state_transitions[i].to_state == to_state_id) {
-                        parser_state *from_state =
-                                &parser->states[state_transitions[i].from_state];
-                        parser_state *to_state =
-                                &parser->states[state_transitions[i].to_state];
+                        parser_state *from_state = &parser->states[state_transitions[i].from_state];
+                        parser_state *to_state = &parser->states[state_transitions[i].to_state];
                         if (from_state->on_departure != NULL) {
                                 from_state->on_departure(key, NULL);
                         }
@@ -42,8 +38,8 @@ int transit_to(struct selector_key *key, parser_t *parser,
         return parser->error_state->id;
 }
 
-int process_char(struct selector_key *key, parser_t *parser,
-                 unsigned int current_state_id, uint8_t c)
+int process_char(struct selector_key *key, parser_t *parser, unsigned int current_state_id,
+                 uint8_t c)
 {
         if (parser == NULL) {
                 log(ERROR, "NULL parser in process_char");
@@ -65,15 +61,11 @@ int process_char(struct selector_key *key, parser_t *parser,
                 activator_index = c - ' ';
         }
 
-        parser_transition *state_transitions =
-                parser->transitions[current_state_id];
-        for (size_t i = 0; i < parser->transitions_per_state[current_state_id];
-             i++) {
+        parser_transition *state_transitions = parser->transitions[current_state_id];
+        for (size_t i = 0; i < parser->transitions_per_state[current_state_id]; i++) {
                 if (state_transitions[i].activators[activator_index] == true) {
-                        parser_state *from_state =
-                                &parser->states[state_transitions[i].from_state];
-                        parser_state *to_state =
-                                &parser->states[state_transitions[i].to_state];
+                        parser_state *from_state = &parser->states[state_transitions[i].from_state];
+                        parser_state *to_state = &parser->states[state_transitions[i].to_state];
                         if (from_state->on_departure != NULL) {
                                 from_state->on_departure(key, c);
                         }
@@ -95,15 +87,13 @@ int process_char(struct selector_key *key, parser_t *parser,
         return parser->error_state->id;
 }
 
-void add_activator_range(parser_transition *transition, uint8_t start,
-                         uint8_t end)
+void add_activator_range(parser_transition *transition, uint8_t start, uint8_t end)
 {
         if (transition == NULL) {
                 return;
         }
         if (start == '\r' || start == '\n' || end == '\r' || end == '\n') {
-                log(ERROR,
-                    "Cannot use \\r or \\n as one extreme for the activator range");
+                log(ERROR, "Cannot use \\r or \\n as one extreme for the activator range");
                 return;
         }
 

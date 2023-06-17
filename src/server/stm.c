@@ -24,8 +24,7 @@ void stm_init(struct state_machine *stm)
         }
 }
 
-inline static void handle_first(struct state_machine *stm,
-                                struct selector_key *key)
+inline static void handle_first(struct state_machine *stm, struct selector_key *key)
 {
         if (stm->current == NULL) {
                 stm->current = stm->states + stm->initial;
@@ -35,15 +34,13 @@ inline static void handle_first(struct state_machine *stm,
         }
 }
 
-inline static void jump(struct state_machine *stm, unsigned next,
-                        struct selector_key *key)
+inline static void jump(struct state_machine *stm, unsigned next, struct selector_key *key)
 {
         if (next > stm->max_state) {
                 abort();
         }
         if (stm->current != stm->states + next) {
-                if (stm->current != NULL &&
-                    stm->current->on_departure != NULL) {
+                if (stm->current != NULL && stm->current->on_departure != NULL) {
                         stm->current->on_departure(stm->current->state, key);
                 }
                 stm->current = stm->states + next;

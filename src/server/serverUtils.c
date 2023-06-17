@@ -23,23 +23,19 @@ int createTCPSocketServer(unsigned int port)
 
         const int serverSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
         if (serverSocket < 0) {
-                log(ERROR,
-                    "[serverUtils][createTCPSocketServer] Unable to create socket");
+                log(ERROR, "[serverUtils][createTCPSocketServer] Unable to create socket");
                 return -1;
         }
 
-        setsockopt(serverSocket, SOL_SOCKET, SO_REUSEADDR, &(int){ 1 },
-                   sizeof(int));
+        setsockopt(serverSocket, SOL_SOCKET, SO_REUSEADDR, &(int){ 1 }, sizeof(int));
 
         if (bind(serverSocket, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
-                log(ERROR,
-                    "[serverUtils][createTCPSocketServer] Unable to bind socket %d",
+                log(ERROR, "[serverUtils][createTCPSocketServer] Unable to bind socket %d",
                     serverSocket);
                 close(serverSocket);
                 return -1;
         }
-        log(DEBUG,
-            "[serverUtils][createTCPSocketServer] Socket %d bounded to port %d",
+        log(DEBUG, "[serverUtils][createTCPSocketServer] Socket %d bounded to port %d",
             serverSocket, port);
 
         if (listen(serverSocket, port)) {
@@ -50,8 +46,7 @@ int createTCPSocketServer(unsigned int port)
                 return -1;
         }
 
-        log(DEBUG, "[serverUtils][createTCPSocketServer] Socket %d listening",
-            serverSocket);
+        log(DEBUG, "[serverUtils][createTCPSocketServer] Socket %d listening", serverSocket);
 
         return serverSocket;
 }
