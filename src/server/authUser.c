@@ -11,55 +11,57 @@
 #include <string.h>
 #include <sys/socket.h>
 
-void initAuthUser(const unsigned state, struct selector_key* key) {
-    log(DEBUG, "Initializing new Auth User Parser");
-    client_data* data = GET_DATA(key);
-    init_auth_user_parser(&data->parser.auth_user_parser);
+void initAuthUser(const unsigned state, struct selector_key *key)
+{
+        log(DEBUG, "Initializing new Auth User Parser");
+        client_data *data = GET_DATA(key);
+        init_auth_user_parser(&data->parser.auth_user_parser);
 }
 
-
-unsigned auth_user_read(struct selector_key* key) {
-    if (key == NULL) {
-        log(ERROR, "auth_user_read NULL key");
-        return ERROR_POP3;
-    }
-
-    client_data* data = GET_DATA(key);
-
-    size_t read_limit = 0;
-    uint8_t * readBuffer = buffer_write_ptr(&data->read_buffer_client, &read_limit);
-    size_t read_count = recv(key->fd, readBuffer, read_limit, 0);
-    if (read_count > 0) 
-        log(DEBUG, "auth_user_read read %ld bytes", read_count);
-    if (read_count < 0) {
-        return ERROR_POP3;
-    }
-    if (read_count == 0) {
-        log(DEBUG, "Socket %d closed connections", key->fd);
-        return DONE;
-    }
-
-    buffer_write_adv(&data->read_buffer_client, read_count);
-
-    int state = auth_user_parse(key, &data->parser.auth_user_parser, &data->read_buffer_client);
-
-
-    if (state == -1) {
-        return ERROR_POP3;
-    } 
-    if (data->parser.auth_user_parser.ended == true) {
-        if (data->parser.auth_user_parser.error_code == 0) {
-            return DONE;
-        } else {
-            return ERROR_POP3; // TODO GO TO AUTH_ERROR WITH AN ERROR CODE
+unsigned auth_user_read(struct selector_key *key)
+{
+        if (key == NULL) {
+                log(ERROR, "auth_user_read NULL key");
+                return ERROR_POP3;
         }
-    }
-    return AUTH_USER_READ;
+
+        client_data *data = GET_DATA(key);
+
+        size_t read_limit = 0;
+        uint8_t *readBuffer =
+                buffer_write_ptr(&data->read_buffer_client, &read_limit);
+        size_t read_count = recv(key->fd, readBuffer, read_limit, 0);
+        if (read_count > 0)
+                log(DEBUG, "auth_user_read read %ld bytes", read_count);
+        if (read_count < 0) {
+                return ERROR_POP3;
+        }
+        if (read_count == 0) {
+                log(DEBUG, "Socket %d closed connections", key->fd);
+                return DONE;
+        }
+
+        buffer_write_adv(&data->read_buffer_client, read_count);
+
+        int state = auth_user_parse(key, &data->parser.auth_user_parser,
+                                    &data->read_buffer_client);
+
+        if (state == -1) {
+                return ERROR_POP3;
+        }
+        if (data->parser.auth_user_parser.ended == true) {
+                if (data->parser.auth_user_parser.error_code == 0) {
+                        return DONE;
+                } else {
+                        return ERROR_POP3; // TODO GO TO AUTH_ERROR WITH AN ERROR CODE
+                }
+        }
+        return AUTH_USER_READ;
 }
 
-
-unsigned auth_user_write(struct selector_key * key) {
-    /*
+unsigned auth_user_write(struct selector_key *key)
+{
+        /*
      * if buffer_can_read(write_buffer) // There's something to send in the buffer.
      *     send(msg)
      *     if sent < 0:
@@ -87,29 +89,33 @@ unsigned auth_user_write(struct selector_key * key) {
      *     is_sending = true
      *     ret NEXT_STATE
      *
-    */ 
-    client_data* data = GET_DATA(key);
-    if (buffer_can_read(&data->write_buffer_client)) {
-        ssize_t total_bytes_to_send = 0;
-        uint8_t* bytes_to_send = buffer_read_ptr(&data->write_buffer_client, &total_bytes_to_send);
-        ssize_t bytes_sent = send(key->fd, bytes_to_send, total_bytes_to_send, 0); // TODO Check flags
-        if (bytes_sent < 0) {
-            data->is_sending = false;
-            data->err_code = UNKNOWN_ERROR; // TODO Check if a different Error code is correct
-            return ERROR_POP3;
+    */
+        client_data *data = GET_DATA(key);
+        if (buffer_can_read(&data->write_buffer_client)) {
+                ssize_t total_bytes_to_send = 0;
+                uint8_t *bytes_to_send = buffer_read_ptr(
+                        &data->write_buffer_client, &total_bytes_to_send);
+                ssize_t bytes_sent = send(key->fd, bytes_to_send,
+                                          total_bytes_to_send,
+                                          0); // TODO Check flags
+                if (bytes_sent < 0) {
+                        data->is_sending = false;
+                        data->err_code =
+                                UNKNOWN_ERROR; // TODO Check if a different Error code is correct
+                        return ERROR_POP3;
+                }
+                if (bytes_sent == 0) {
+                        return DONE;
+                }
+                if (bytes_sent == total_bytes_to_send) {
+                        data->is_sending = false;
+                        if (data->err_code == NO_ERROR) {
+                                return AUTH_PASS_READ;
+                        } else {
+                                return AUTH_USER_READ; // Ask for the user again
+                        }
+                } else {
+                        return AUTH_USER_WRITE;
+                }
         }
-        if (bytes_sent == 0) {
-            return DONE;
-        }
-        if (bytes_sent == total_bytes_to_send) {
-            data->is_sending = false;
-            if (data->err_code == NO_ERROR) {
-                return AUTH_PASS_READ;
-            } else {
-                return AUTH_USER_READ; // Ask for the user again
-            }
-        } else {
-            return AUTH_USER_WRITE;
-        }
-    }
 }
