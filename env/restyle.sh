@@ -35,7 +35,7 @@ readonly BLUE='\e[34m'
 readonly NOCOLOR='\e[0m'
 
 for folder in "${SOURCES[@]}"; do
-    echo -e "${BLUE}${BOLD}Formatting files in ${folder}${NOCOLOR}"
+    echo -e "${BLUE}${BOLD}Formatting files in ${folder##*./}${NOCOLOR}"
 
     if find "$folder/" -type f -regex ".*\.[ch]" -exec clang-format -i {} \;; then
         echo -e "\e[32m\e[1mSucceded.\e[0m"

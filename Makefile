@@ -15,7 +15,7 @@ ifneq ($(words $(subst :, ,$(abs_srctree))), 1)
 	$(error source directory cannot contain spaces or colons)
 endif
 
-
+ENVDIR	:= $(abs_srctree)/env
 SRCDIR	:= $(abs_srctree)/src
 BINDIR	:= $(abs_srctree)/bin
 OBJDIR	:= $(abs_srctree)/obj
@@ -33,8 +33,6 @@ CFLAGS	:= -g -std=c11 -pedantic \
 		-Wall -Wextra \
 		-fsanitize=address -fdiagnostics-color=auto \
 		-I$(INCLUDE) $(LDLIBS)
-
-
 
 export MAKE CC CFLAGS LDLIBS
 export SRCDIR BINDIR INCLUDE OBJDIR
@@ -73,5 +71,7 @@ clean:
 	$(MAKE) -C $(UTILS) clean
 	$(MAKE) -C $(SERVER) clean
 
+format:
+	@$(ENVDIR)/restyle.sh
 
-.PHONY: all test clean force
+.PHONY: all test clean force format
