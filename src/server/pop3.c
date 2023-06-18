@@ -45,6 +45,9 @@ const struct state_definition client_states[] = { {
                                                           .on_write_ready = auth_process,
                                                   },
                                                   {
+                                                          .state = TRANSACTION,
+                                                  },
+                                                  {
                                                           .state = DONE,
                                                   },
                                                   {
