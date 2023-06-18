@@ -2,6 +2,7 @@
 #define POP3_H
 #include <server/parsers/authParser.h>
 #include <server/parsers/transParser.h>
+#include <server/fileReader.h>
 #include <sys/socket.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -32,6 +33,7 @@ typedef struct client_data { // Add more items as we need them
     int next_state;
     struct buffer write_buffer_client;
     struct buffer read_buffer_client;
+    struct file_reader_data fr_data;
     } client_data;
 
 enum pop3_states {
