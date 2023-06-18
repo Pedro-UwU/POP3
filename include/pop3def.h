@@ -17,6 +17,7 @@ enum POP3ErrCodes {
     INVALID_CHAR,
     WRONG_PASSWORD,
     WRONG_TIME_PASS_CMD,
+    USER_ALREADY_ONLINE,
     /* ... */
     UNKNOWN_ERROR,
 };

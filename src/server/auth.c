@@ -8,6 +8,7 @@
 #include <server/parsers/authParser.h>
 #include <server/pop3.h>
 #include <server/auth.h>
+#include <server/user.h>
 #include <stdint.h>
 #include <sys/socket.h>
 #define MAX_BUFF_SIZE 1024
@@ -97,10 +98,9 @@ unsigned auth_process(struct selector_key* key) {
         return AUTH;
     } 
     auth_parser_t* auth_parser = &data->parser.auth_parser;
-    init_auth_parser(auth_parser); // Init again to delete previous data
     auth_parse(key, auth_parser, input_buffer);
     if (auth_parser->ended == false) { // The command is incomplete
-        selector_set_interest_key(key, OP_READ); // Go to read again to wait for the rest of the command
+        selector_set_interest_key(key, OP_READ); // Go to read again to wait for the rest of the command // TODO, check this
         return AUTH;
     }
     int status = process_cmd(data);
@@ -143,24 +143,12 @@ unsigned auth_process(struct selector_key* key) {
         next_state = AUTH; 
     }
     data->next_state = -1;
+    if (next_state == AUTH) {
+        init_auth_parser(auth_parser); // Init again to delete previous data
+    }
     return next_state;
 
 }
-
-static bool check_user(char* username) { // TODO CREATE A REAL CHECK USER
-    if (strcmp(username, "PEDRO") == 0) {
-        return true;
-    }
-    return false;
-}
-
-static bool check_user_and_pass(const char* username, const char* password) {
-    if (strcmp(username, "PEDRO") == 0 && strcmp(password, "12345")) {
-        return true;
-    } 
-    return false;
-}
-
 
 static int process_cmd(client_data* data) {
     char* cmd = data->parser.auth_parser.cmd;
@@ -170,10 +158,19 @@ static int process_cmd(client_data* data) {
         return 0;
     }
     if (strcmp("USER", cmd) == 0) {
-        bool user_exists = check_user(data->parser.auth_parser.arg);
-        if (user_exists == true) {
+        bool exists = user_exists(data->parser.auth_parser.arg);
+        if (exists == true) {
+            if (user_get_state(data->parser.auth_parser.arg) != USER_OFFLINE) {
+                data->err_code = USER_ALREADY_ONLINE;
+                data->next_state = AUTH;
+                return -1;
+            }
             data->next_state = AUTH;
+            if (data->user[0] != 0) { // Trying to log in with another user
+                user_set_state((char *)data->user, USER_OFFLINE);
+            }
             strcpy((char *)data->user, data->parser.auth_parser.arg);
+            user_set_state((char *)data->user, USER_LOGGING);
             return 0;
         }
         data->err_code = INVALID_USER;
@@ -186,16 +183,24 @@ static int process_cmd(client_data* data) {
             data->next_state = AUTH;
             return -1;
         }
-        bool logged = check_user_and_pass((const char *)data->user, (const char *)data->parser.auth_parser.arg);
+        bool logged = user_check_pass((const char *)data->user, (const char *)data->parser.auth_parser.arg);
         if (logged == false) {
+            user_set_state((const char*)data->user, USER_OFFLINE);
+            memset(data->user, 0, MAX_ARG_LEN);
             data->err_code = WRONG_PASSWORD;
             data->next_state = AUTH;
             return -1;
         }
+        user_set_state((const char*)data->user, USER_ONLINE);
         data->next_state = AUTH; // TODO CHANGE TO TRANSACTION
         return 0;
     }
-    data->err_code = INVALID_CMD;
+    if (data->err_code != INVALID_CHAR) {
+        data->err_code = INVALID_CMD;
+        data->next_state = AUTH;
+        memset(data->user, 0, MAX_ARG_LEN+1);
+        return AUTH;
+    }
     data->next_state = ERROR_POP3;
     return -1;
 }
@@ -205,10 +210,10 @@ static char* generateMsg(client_data* data, int status) {
         if (data->parser.auth_parser.quit == true) {
             return "+OK closing connection\r\n";
         }
-        if (strlen((char *)data->user) == 0) {
-            return "+OK logging in\r\n";
+        if (user_get_state((const char*)data->user) == USER_LOGGING) {
+            return "+OK valid user\r\n";
         }
-        return "+OK valid user\r\n";
+        return "+OK logged in\r\n";
     }
     int err = data->err_code;
     if (err == INVALID_USER) {
@@ -222,6 +227,9 @@ static char* generateMsg(client_data* data, int status) {
     }
     if (err == INVALID_CMD) {
         return "-ERR invalid command\r\n";
+    }
+    if (err == USER_ALREADY_ONLINE) {
+        return "-ERR user already online\r\n";
     }
     return "-ERR unknown error\r\n";
 }

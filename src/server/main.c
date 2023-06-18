@@ -9,6 +9,7 @@
 #include <server/serverUtils.h>
 #include <server/selector.h>
 #include <server/pop3.h>
+#include <server/user.h>
 #include <utils/logger.h>
 
 int serverRunning = 1;
@@ -27,6 +28,7 @@ int main(void)
         setLogLevel(DEBUG);
         unsigned int port = 60711;
         // TODO: Receive port via args
+        user_add("USER1", "12345");
 
         close(0); // Nothing to read from stdin
 
