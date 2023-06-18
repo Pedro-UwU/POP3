@@ -8,6 +8,7 @@
 #include <server/states/greeting.h>
 #include <server/selector.h>
 #include <server/auth.h>
+#include <server/transaction.h>
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
@@ -46,6 +47,9 @@ const struct state_definition client_states[] = { {
                                                   },
                                                   {
                                                           .state = TRANSACTION,
+                                                          .on_arrival = init_trans,
+                                                          .on_read_ready = trans_read,
+                                                          .on_write_ready = trans_process,
                                                   },
                                                   {
                                                           .state = DONE,

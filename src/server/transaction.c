@@ -7,6 +7,9 @@
 #include <server/transaction.h>
 #include <server/parsers/transParser.h>
 
+static void handle_request(client_data* data);
+
+
 void init_trans(const unsigned int state, struct selector_key *key) {
     client_data* data = GET_DATA(key);
     init_trans_parser(&data->parser.trans_parser);
@@ -46,25 +49,14 @@ unsigned trans_read(struct selector_key *key) {
     }
     buffer_write_adv(data_buffer, read_count);
     selector_set_interest_key(key, OP_WRITE);
-    return AUTH;
+    return TRANSACTION;
 
 }
 
 
 unsigned trans_process(struct selector_key *key) {
     client_data* data = GET_DATA(key);
-    // If sending: 
-    //  -> to_send = len(msg)
-    //  -> can_send = min(len(msg), MAX_BYTES_TO_SEND);
-    //  -> send(msg, can_send);
-    //  -> if sended == to_send
-    //      -> if sending_file == true:
-    //          selector_set_interest(data->file_key, OP_READ); // Tell the file reader to read again
-    //          selector_set_interest(key, OP_NOOP); // 
-    //      -> else:
-    //          -> sending = false
-    //  -> else:
-    //      return TRANS  // Keep sending
+   
     if (data->is_sending == true) {
         size_t bytes_to_send = 0;
         uint8_t* bytes = buffer_read_ptr(&data->write_buffer_client, &bytes_to_send);
@@ -80,53 +72,39 @@ unsigned trans_process(struct selector_key *key) {
                 // SET INTEREST OF FILE SELECTOR TO READ AND SELF TO NOOP
             } else {
                 data->is_sending = false;
+                if (buffer_can_read(&data->read_buffer_client) == false) {
+                   selector_set_interest_key(key, OP_READ);
+                }
                 return data->next_state;
             }
         }
         return TRANSACTION;
     }
 
-    //
-    // 
-    //
-    // If not sending:
-    //  -> if input_buffer is empty 
-    //      -> return TRANS
-    //  -> input = read_buffer(input_buffer)
-    //  -> parse(input)
-    //  -> if (parser is not finished)
-    //      -> register OP_READ
-    //      -> return TRANS
-    //  -> handle_request(client_data);
-    //  -> if (can_read(output_buffer)):
-    //      -> send(output_buffer)
-    //      -> if (sent < len(msg)):
-    //          -> sending = true;
-    //          -> return TRANS
-    //      if (input_buffer is empty) 
-    //          set_interes(key, OP_READ);
-    //      }
-    //      return data->next_state
-    //  -> WTF, Shouldn't be here, but ok
-    //  -> set_interest(key, OP_READ);
-    //  -> return TRANS
     if (buffer_can_read(&data->read_buffer_client) == false) {
         selector_set_interest_key(key, OP_READ);
         return TRANSACTION;
     }
-    size_t input_read = 0;
-    uint8_t* input_bytest = buffer_read_ptr(&data->read_buffer_client, &input_read);
-
+    
     trans_parser_t* parser = &data->parser.trans_parser;
     trans_parse(key, parser,  &data->read_buffer_client);
     if (parser->ended == false) {
         selector_set_interest_key(key, OP_READ);
         return TRANSACTION;
     }
-    
-
-    
-
-
-
+    // Hande request
+    handle_request(data);
+    if (buffer_can_read(&data->write_buffer_client) == false) {
+        log(ERROR, "Nothing to read after handling the request in TRANSACTION. Socket %d", key->fd);
+        return ERROR_POP3;
+    }
+    data->is_sending = true;
+    return TRANSACTION;
 }
+
+
+static void handle_request(client_data* data) {
+    log(DEBUG, "HANDLING CMD: %s - ARGS: %s", data->parser.trans_parser.cmd, data->parser.trans_parser.arg);
+    data->next_state = TRANSACTION;
+}
+

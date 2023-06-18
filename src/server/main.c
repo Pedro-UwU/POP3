@@ -1,3 +1,4 @@
+#include "server/parsers/transParser.h"
 #include <server/parsers/authParser.h>
 #include <string.h>
 #include <unistd.h>
@@ -82,6 +83,7 @@ int main(void)
         }
 
         conf_auth_parser();
+        conf_trans_parser();
 
         while (serverRunning) {
                 err_msg = NULL;
@@ -113,7 +115,8 @@ finally:
         }
 
         selector_close();
-        free_auth_parser();
+        free_auth_parser(); 
+        free_trans_parser();
 
         return ret;
 }
