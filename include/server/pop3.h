@@ -34,6 +34,7 @@ typedef struct client_data { // Add more items as we need them
 enum pop3_states {
     GREETING_WRITE = 0,
     AUTH,
+    TRANSACTION,
     //AUTH_WRITE,
     /* ... */
     DONE,
