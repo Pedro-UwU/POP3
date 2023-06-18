@@ -34,10 +34,9 @@ static const fd_handler pop3_handler = {
         .handle_close = NULL,
 };
 
-const struct state_definition client_states[] = {
-                                                  {
-                                                         .state = GREETING_WRITE,
-                                                         .on_write_ready = greeting_write,
+const struct state_definition client_states[] = { {
+                                                          .state = GREETING_WRITE,
+                                                          .on_write_ready = greeting_write,
                                                   },
                                                   {
                                                           .state = AUTH,
