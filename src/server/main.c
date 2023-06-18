@@ -1,5 +1,3 @@
-#include "server/parsers/authPassParser.h"
-#include "server/parsers/authUserParser.h"
 #include <server/parsers/authParser.h>
 #include <string.h>
 #include <unistd.h>
