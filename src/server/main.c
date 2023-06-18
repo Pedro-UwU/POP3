@@ -115,7 +115,7 @@ finally:
         }
 
         selector_close();
-        free_auth_parser(); 
+        free_auth_parser();
         free_trans_parser();
 
         return ret;

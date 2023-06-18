@@ -202,7 +202,7 @@ static int process_cmd(client_data *data)
                         return -1;
                 }
                 user_set_state((const char *)data->user, USER_ONLINE);
-                data->next_state = AUTH; // TODO CHANGE TO TRANSACTION
+                data->next_state = TRANSACTION;
                 return 0;
         }
         if (data->err_code != INVALID_CHAR) {
@@ -211,18 +211,8 @@ static int process_cmd(client_data *data)
                 memset(data->user, 0, MAX_ARG_LEN + 1);
                 return AUTH;
         }
-        user_set_state((const char*)data->user, USER_ONLINE);
-        data->next_state = TRANSACTION;
-        return 0;
-    }
-    if (data->err_code != INVALID_CHAR) {
-        data->err_code = INVALID_CMD;
-        data->next_state = AUTH;
-        memset(data->user, 0, MAX_ARG_LEN+1);
-        return AUTH;
-    }
-    data->next_state = ERROR_POP3;
-    return -1;
+        data->next_state = ERROR_POP3;
+        return -1;
 }
 
 static char *generateMsg(client_data *data, int status)

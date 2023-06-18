@@ -74,12 +74,13 @@ void conf_trans_parser(void)
                 }
         }
 
-        add_activator_except(&S0_transitions[0], (uint8_t *)" \r\n", 3); // From S1 to S1. Saving the command
+        add_activator_except(&S0_transitions[0], (uint8_t *)" \r\n",
+                             3); // From S1 to S1. Saving the command
         add_activator(&S0_transitions[1], ' '); // From S0 to S1. Command saved
         add_activator(&S0_transitions[2], '\r'); // From S0 to S2. Command withoyt args
-        add_activator_except(&S1_transitions[0], (uint8_t *)"\r\n",2); // From S1 to S1. Saving arg
+        add_activator_except(&S1_transitions[0], (uint8_t *)"\r\n", 2); // From S1 to S1. Saving arg
         add_activator(&S1_transitions[1], '\r'); // From S1 to S2. End of args
-        add_activator(&S2_transitions[0],'\n'); // From S2 to S3. \n after \r. Final
+        add_activator(&S2_transitions[0], '\n'); // From S2 to S3. \n after \r. Final
 
         trans_inner_parser.states = trans_states;
         trans_inner_parser.error_state = &trans_states[SERR];
@@ -111,12 +112,12 @@ void init_trans_parser(trans_parser_t *parser)
         memset(parser->arg, 0, MAX_ARG_LEN);
 }
 
-int trans_parse(struct selector_key *key, trans_parser_t *trans_parser,
-                    struct buffer *buffer)
+int trans_parse(struct selector_key *key, trans_parser_t *trans_parser, struct buffer *buffer)
 {
-        client_data* data = GET_DATA(key);
+        client_data *data = GET_DATA(key);
         int state = 0;
-        while (data->parser.trans_parser.err_value == NO_ERROR && buffer_can_read(buffer) && trans_parser->ended != true) {
+        while (data->parser.trans_parser.err_value == NO_ERROR && buffer_can_read(buffer) &&
+               trans_parser->ended != true) {
                 state = process_char(key, trans_parser->parser, trans_parser->state_id,
                                      buffer_read(buffer));
                 trans_parser->state_id = state;
@@ -128,7 +129,7 @@ int trans_parse(struct selector_key *key, trans_parser_t *trans_parser,
 static void save_cmd(struct selector_key *key, uint8_t c)
 {
         if (!isalpha(c)) {
-            return;
+                return;
         }
         client_data *data = GET_DATA(key);
         trans_parser_t *parser = &data->parser.trans_parser;
@@ -143,7 +144,7 @@ static void save_cmd(struct selector_key *key, uint8_t c)
 static void save_arg(struct selector_key *key, uint8_t c)
 {
         if (!isprint(c)) {
-            return;
+                return;
         }
         client_data *data = GET_DATA(key);
         trans_parser_t *parser = &data->parser.trans_parser;
@@ -156,10 +157,11 @@ static void save_arg(struct selector_key *key, uint8_t c)
         return;
 }
 
-static void final_arrival(struct selector_key *key, uint8_t c) {
-    client_data* data = GET_DATA(key);
-    trans_parser_t *parser = &data->parser.trans_parser;
-    parser->ended = true;
+static void final_arrival(struct selector_key *key, uint8_t c)
+{
+        client_data *data = GET_DATA(key);
+        trans_parser_t *parser = &data->parser.trans_parser;
+        parser->ended = true;
 }
 
 static void error_arrival(struct selector_key *key, uint8_t c)
