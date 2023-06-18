@@ -30,7 +30,6 @@ unsigned user_get_state(const char *user)
                 if (strcmp(user, aux_user) == 0) {
                         return states[i];
                 }
-                return USER_NOT_FOUND;
         }
         return USER_NOT_FOUND;
 }
