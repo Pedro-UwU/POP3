@@ -23,6 +23,7 @@ typedef struct client_data { // Add more items as we need them
     struct sockaddr_storage client_address;
     bool closed;
     bool is_sending;
+    bool sending_file;
     unsigned err_code;
     uint8_t read_buffer_data[BUFFER_SIZE];
     uint8_t write_buffer_data[BUFFER_SIZE];

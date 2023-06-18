@@ -107,6 +107,7 @@ static void init_new_client_data(client_data *data, int new_fd,
         data->err_code = NO_ERROR;
         data->closed = false;
         data->is_sending = false;
+        data->sending_file = false;
         data->client_fd = new_fd;
         data->client_address = client_address;
         data->next_state = -1;

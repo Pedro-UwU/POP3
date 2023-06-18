@@ -5,6 +5,7 @@
 #define MAX_ARG_LEN 40
 #define MAX_ARGS 5
 #define MAX_RSP_LEN 512
+#define MAX_BYTES_SEND 256
 #define USER_CMD "USER"
 #define QUIT_CMD "QUIT"
 
