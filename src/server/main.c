@@ -1,5 +1,6 @@
 #include "server/parsers/authPassParser.h"
 #include "server/parsers/authUserParser.h"
+#include <server/parsers/authParser.h>
 #include <string.h>
 #include <unistd.h>
 #include <signal.h>
@@ -80,8 +81,7 @@ int main(void)
                 goto finally;
         }
 
-        conf_auth_user_parser();
-        conf_auth_pass_parser();
+        conf_auth_parser();
 
         while (serverRunning) {
                 err_msg = NULL;
@@ -113,9 +113,8 @@ finally:
         }
 
         selector_close();
+        free_auth_parser();
 
-        free_auth_user_parser_conf();
-        free_auth_pass_parser();
 
         return ret;
 }

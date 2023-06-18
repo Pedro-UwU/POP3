@@ -1,5 +1,6 @@
 #ifndef POP3_H
 #define POP3_H
+#include "server/parsers/authParser.h"
 #include <sys/socket.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -18,6 +19,7 @@ typedef struct client_data { // Add more items as we need them
     union { // Parsers 
         auth_user_parser_t auth_user_parser;
         auth_pass_parser_t auth_pass_parser;
+        auth_parser_t auth_parser;
     } parser;
 
     struct sockaddr_storage client_address;
@@ -28,16 +30,14 @@ typedef struct client_data { // Add more items as we need them
     uint8_t write_buffer_data[BUFFER_SIZE];
     uint8_t user[MAX_ARG_LEN + 1]; // NULL terminated username
     int client_fd;
+    int next_state;
     struct buffer write_buffer_client;
     struct buffer read_buffer_client;
     } client_data;
 
 enum pop3_states {
     GREETING_WRITE = 0,
-    AUTH_USER_READ,
-    AUTH_USER_WRITE,
-    AUTH_PASS_READ,
-    AUTH_PASS_WRITE,
+    AUTH,
     //AUTH_WRITE,
     /* ... */
     DONE,

@@ -7,7 +7,7 @@
 #include <server/pop3.h>
 #include <server/states/greeting.h>
 #include <server/selector.h>
-#include <server/authUser.h>
+#include <server/auth.h>
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
@@ -34,24 +34,16 @@ static const fd_handler pop3_handler = {
         .handle_close = NULL,
 };
 
-const struct state_definition client_states[] = { {
-                                                          .state = GREETING_WRITE,
-                                                          .on_write_ready = greeting_write,
+const struct state_definition client_states[] = {
+                                                  {
+                                                         .state = GREETING_WRITE,
+                                                         .on_write_ready = greeting_write,
                                                   },
                                                   {
-                                                          .state = AUTH_USER_READ,
-                                                          .on_arrival = initAuthUser,
-                                                          .on_read_ready = auth_user_read,
-                                                  },
-                                                  {
-                                                          .state = AUTH_USER_WRITE,
-                                                          .on_write_ready = auth_user_write,
-                                                  },
-                                                  {
-                                                          .state = AUTH_PASS_READ,
-                                                  },
-                                                  {
-                                                          .state = AUTH_PASS_WRITE,
+                                                          .state = AUTH,
+                                                          .on_arrival = init_auth,
+                                                          .on_read_ready = auth_read,
+                                                          .on_write_ready = auth_process,
                                                   },
                                                   {
                                                           .state = DONE,
@@ -114,6 +106,7 @@ static void init_new_client_data(client_data *data, int new_fd,
         data->is_sending = false;
         data->client_fd = new_fd;
         data->client_address = client_address;
+        data->next_state = -1;
         buffer_init(&data->read_buffer_client, BUFFER_SIZE, data->read_buffer_data);
         buffer_init(&data->write_buffer_client, BUFFER_SIZE, data->write_buffer_data);
         memset(data->user, 0, MAX_ARG_LEN + 1); // Set user buffer to null;
