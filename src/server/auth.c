@@ -135,6 +135,8 @@ unsigned auth_process(struct selector_key* key) {
         return AUTH;
     }
     if (buffer_can_read(input_buffer) == true) { // No more things to read. (PIPELINING)
+        selector_set_interest_key(key, OP_WRITE);
+    } else {
         selector_set_interest_key(key, OP_READ);
     }
     int next_state = data->next_state;
