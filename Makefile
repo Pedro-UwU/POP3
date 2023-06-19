@@ -29,7 +29,7 @@ TEST_SRCDIR 	:= $(abs_srctree)/test
 # Compiler and flags
 LDLIBS	:= 
 CC	:= gcc
-CFLAGS	:= -g -std=c11 -pedantic \
+CFLAGS	:= -g -std=c11 -Wno-variadic-macros \
 		-Wall -Wextra \
 		-fsanitize=address -fdiagnostics-color=auto \
 		-I$(INCLUDE) $(LDLIBS)
