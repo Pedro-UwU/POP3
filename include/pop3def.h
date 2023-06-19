@@ -10,18 +10,18 @@
 #define QUIT_CMD "QUIT"
 
 enum POP3ErrCodes {
-    NO_ERROR = 0,
-    LONG_PARAM,
-    LONG_CMD,
-    INVALID_CMD,
-    INVALID_ARG,
-    INVALID_USER,
-    INVALID_CHAR,
-    WRONG_PASSWORD,
-    WRONG_TIME_PASS_CMD,
-    USER_ALREADY_ONLINE,
-    /* ... */
-    UNKNOWN_ERROR,
+        NO_ERROR = 0,
+        LONG_PARAM,
+        LONG_CMD,
+        INVALID_CMD,
+        INVALID_ARG,
+        INVALID_USER,
+        INVALID_CHAR,
+        WRONG_PASSWORD,
+        WRONG_TIME_PASS_CMD,
+        USER_ALREADY_ONLINE,
+        /* ... */
+        UNKNOWN_ERROR,
 };
 
 #endif // !POP3_DEF

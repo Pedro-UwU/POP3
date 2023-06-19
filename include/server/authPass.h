@@ -2,6 +2,6 @@
 #define AUTH_PASS_H
 #include <server/selector.h>
 
-void initAuthPassword(const unsigned state, struct selector_key* key);
+void initAuthPassword(const unsigned state, struct selector_key *key);
 
 #endif // !AUTH_PASS_H

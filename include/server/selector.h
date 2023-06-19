@@ -145,8 +145,7 @@ typedef struct fd_handler {
  *
  * @return 0 si fue exitoso el registro.
  */
-selector_status selector_register(fd_selector s, const int fd,
-                                  const fd_handler *handler,
+selector_status selector_register(fd_selector s, const int fd, const fd_handler *handler,
                                   const fd_interest interest, void *data);
 
 /**
@@ -158,8 +157,7 @@ selector_status selector_unregister_fd(fd_selector s, const int fd);
 selector_status selector_set_interest(fd_selector s, int fd, fd_interest i);
 
 /** permite cambiar los intereses para un file descriptor */
-selector_status selector_set_interest_key(struct selector_key *key,
-                                          fd_interest i);
+selector_status selector_set_interest_key(struct selector_key *key, fd_interest i);
 
 /**
  * se bloquea hasta que hay eventos disponible y los despacha.

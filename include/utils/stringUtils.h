@@ -1,6 +1,6 @@
 #ifndef STRING_UTILS_H
 #define STRING_UTILS_H
 
-void convertToUpper(char *str); 
+void convertToUpper(char *str);
 
 #endif // !STRING_UTILS_H
