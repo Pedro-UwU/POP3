@@ -5,7 +5,6 @@
 #include "server/buffer.h"
 #include <server/stm.h>
 #include <server/pop3.h>
-#include <server/states/greeting.h>
 #include <server/selector.h>
 #include <server/auth.h>
 #include <server/transaction.h>
@@ -16,6 +15,7 @@
 #include <utils/logger.h>
 #include <sys/socket.h>
 #include <sys/select.h>
+#include <server/writter.h>
 
 //It is 1023 because of the select() limitation: https://stackoverflow.com/questions/2332741/what-is-the-theoretical-maximum-number-of-open-tcp-connections-that-a-modern-lin
 #define MAX_SOCKETS 1023
@@ -37,7 +37,7 @@ static const fd_handler pop3_handler = {
 
 const struct state_definition client_states[] = { {
                                                           .state = GREETING_WRITE,
-                                                          .on_write_ready = greeting_write,
+                                                          .on_write_ready = write_greeting,
                                                   },
                                                   {
                                                           .state = AUTH,
@@ -48,6 +48,7 @@ const struct state_definition client_states[] = { {
                                                   {
                                                           .state = TRANSACTION,
                                                           .on_arrival = init_trans,
+                                                          .on_departure = finish_trans,
                                                           .on_read_ready = trans_read,
                                                           .on_write_ready = trans_process,
                                                   },

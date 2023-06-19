@@ -9,6 +9,7 @@
 #include <server/pop3.h>
 #include <server/auth.h>
 #include <server/user.h>
+#include <server/writter.h>
 #include <stdint.h>
 #include <sys/socket.h>
 #define MAX_BUFF_SIZE 1024
@@ -110,32 +111,15 @@ unsigned auth_process(struct selector_key *key)
                         OP_READ); // Go to read again to wait for the rest of the command // TODO, check this
                 return AUTH;
         }
+
         int status = process_cmd(data);
+
         char *msg = generateMsg(data, status);
-        size_t msg_len = strlen(msg);
-        if (buffer_can_write(output_buffer) == false) {
-                buffer_compact(output_buffer); // Try compacting
-                if (buffer_can_write(output_buffer)) {
-                        data->err_code = UNKNOWN_ERROR;
-                        return ERROR_POP3;
-                }
-        }
-
-        size_t write_limit = 0;
-        char *out_w_str = (char *)buffer_write_ptr(output_buffer, &write_limit);
-        // TODO Check (even tho it's unlikely) if the write_limit is less than the strlen of the msg
-        strcpy(out_w_str, msg);
-        buffer_write_adv(output_buffer, msg_len);
-
-        size_t read_limit = 0;
-        char *out_r_str = (char *)buffer_read_ptr(output_buffer, &read_limit);
-        ssize_t sent_bytes = send(key->fd, out_r_str, read_limit, 0);
-        if (sent_bytes < 0) { // Something went wrong
-                data->err_code = UNKNOWN_ERROR;
+        ssize_t sent_bytes = write_msg(key, msg);
+        if (sent_bytes < 0) {
                 return ERROR_POP3;
         }
 
-        log(DEBUG, "READ_LIMIT: %d - sent_bytes: %d", read_limit, sent_bytes);
         buffer_read_adv(output_buffer, sent_bytes);
         if (buffer_can_read(output_buffer) == true) { // Things left to send
                 data->is_sending = true;
