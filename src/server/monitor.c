@@ -1,4 +1,4 @@
-#include "server/parsers/monitorParser.h"
+#include <server/parsers/monitorParser.h>
 #include <server/buffer.h>
 #include <server/stm.h>
 #include <server/monitor.h>
@@ -33,6 +33,8 @@ static void handleMonitorClose(struct selector_key* key);
 static void write_server_down_msg(struct selector_key* key);
 static void write_read_buffer_full_msg(struct selector_key* key);
 static bool continue_sending(struct selector_key* key);
+static bool handle_error(struct selector_key* key);
+static void handle_cmd(struct selector_key* key);
 static void close_connection(struct selector_key* key);
 
 
@@ -140,15 +142,24 @@ static void handleMonitorWrite(struct selector_key* key) {
             bool data_remaining = continue_sending(key);
             if (data_remaining == false) {
                 selector_set_interest_key(key, OP_READ);
+                data->is_sending = false;
             }
             return;
         }
 
-
-        // parse read_buffer
-        // if parse ended
-        //     process command
-        //     is_sending = true
+        monitor_parser_t* parser = &data->monitor_parser;
+        monitor_parse(key, parser, &data->read_buffer);
+        if (parser->ended == true) {
+            if (parser->err_value != NO_ERROR) {
+                bool can_continue = handle_error(key);
+                if (can_continue == false) {
+                    close_connection(key);
+                }
+                return;
+            }
+            handle_cmd(key);
+            data->is_sending = true;
+        }
 }
 
 static void write_server_down_msg(struct selector_key* key) {
