@@ -186,6 +186,8 @@ static int process_cmd(client_data *data)
                         return -1;
                 }
                 user_set_state((const char *)data->user, USER_ONLINE);
+
+                maildir_set_username(&data->maildir, (const char *)data->user);
                 data->next_state = TRANSACTION;
                 return 0;
         }

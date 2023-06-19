@@ -22,24 +22,36 @@
 
 static void new_mail(maildir_mail_t *mail, const char *fname, const char *dir);
 
-user_maildir_t *maildir_open(const char *username)
+int maildir_open(user_maildir_t *maildir, const char *username)
 {
-        if (username == NULL) {
+        if (maildir == NULL) {
+                log(ERROR, "NULL maildir");
+                return 1;
+        }
+
+        memset(maildir, 0, sizeof(user_maildir_t));
+
+        if (username != NULL) {
+                strcpy(maildir->user, username);
+                sprintf(maildir->path, "%s/%s/%s/", MAILDIR_ROOT, maildir->user, MAILDIR_DIR_NAME);
+                maildir->path_len = strlen(maildir->path);
+        }
+
+        return 0;
+}
+
+int maildir_set_username(user_maildir_t *maildir, const char *username)
+{
+        if (maildir == NULL) {
                 log(ERROR, "NULL username");
-                return NULL;
+                return 1;
         }
 
-        user_maildir_t *umail = calloc(1, sizeof(struct user_maildir));
-        if (umail == NULL) {
-                log(FATAL, "Could not allocate memory.");
-                return NULL;
-        }
+        strcpy(maildir->user, username);
+        sprintf(maildir->path, "%s/%s/%s/", MAILDIR_ROOT, maildir->user, MAILDIR_DIR_NAME);
+        maildir->path_len = strlen(maildir->path);
 
-        strcpy(umail->user, username);
-        sprintf(umail->path, "%s/%s/%s/", MAILDIR_ROOT, umail->user, MAILDIR_DIR_NAME);
-        umail->path_len = strlen(umail->path);
-
-        return umail;
+        return 0;
 }
 
 void maildir_close(user_maildir_t *maildir)
@@ -66,8 +78,6 @@ void maildir_close(user_maildir_t *maildir)
                 free(maildir->new.mails);
         }
         maildir->new.len = 0;
-
-        free(maildir);
 }
 
 // List all
@@ -120,7 +130,62 @@ maildir_mails_t *maildir_list_new(user_maildir_t *maildir)
 
         closedir(d);
 
+        maildir->new.ndel = 0;
+
         return &maildir->new;
+}
+
+bool maildir_is_read(maildir_mail_t *mail)
+{
+        if (mail == NULL) {
+                log(ERROR, "No mail.");
+                return false;
+        }
+
+        return mail->read;
+}
+
+// Read/Unread mail
+void maildir_set_read(maildir_mail_t *mail, bool r)
+{
+        if (mail == NULL) {
+                log(ERROR, "No mail.");
+                return;
+        }
+
+        mail->read = r;
+}
+
+bool maildir_is_del(maildir_mail_t *mail)
+{
+        if (mail == NULL) {
+                log(ERROR, "No mail.");
+                return false;
+        }
+
+        return mail->del;
+}
+
+// Delete/Undelete mail. Returns true if marked as deleted
+void maildir_set_del(maildir_mails_t *mails, unsigned n, bool d)
+{
+        if (mails == NULL) {
+                log(ERROR, "No mails.");
+                return;
+        }
+        if (n > mails->len) {
+                log(ERROR, "Invalid mail number.");
+                return;
+        }
+
+        maildir_mail_t *m = &mails->mails[n];
+
+        if (m->del == false && d == true)
+                mails->ndel++;
+        else if (m->del == true && d == false)
+                mails->ndel--;
+
+        m->del = d;
 }
 
 static void new_mail(maildir_mail_t *mail, const char *fname, const char *dir)
@@ -149,4 +214,7 @@ static void new_mail(maildir_mail_t *mail, const char *fname, const char *dir)
         }
 
         mail->size = st.st_size;
+
+        mail->read = false;
+        mail->del = false;
 }

@@ -51,7 +51,6 @@ const struct state_definition client_states[] = { {
                                                   {
                                                           .state = TRANSACTION,
                                                           .on_arrival = init_trans,
-                                                          .on_departure = finish_trans,
                                                           .on_read_ready = trans_read,
                                                           .on_write_ready = trans_process,
                                                   },
@@ -123,6 +122,8 @@ static void init_new_client_data(client_data *data, int new_fd,
         memset(data->user, 0, MAX_ARG_LEN + 1); // Set user buffer to null;
         memset(&data->fr_data, 0, sizeof(struct file_reader_data));
 
+        maildir_open(&data->maildir, NULL);
+
         stm_init(&data->stm);
 }
 
@@ -154,24 +155,26 @@ void pop3_handle_close(struct selector_key *key)
 void close_connection(struct selector_key *key)
 {
         client_data *data = GET_DATA(key);
-        //Already closed
-        if (data->closed) {
+        if (data == NULL)
                 return;
-        }
+
+        //Already closed
+        if (data->closed)
+                return;
 
         data->closed = true;
+
         if (strlen((char *)(data->user)) > 0) {
                 user_set_state((char *)(data->user), USER_OFFLINE);
         }
-        log(INFO, "Closing connection from socket %d", key->fd);
 
         selector_unregister_fd(key->s, key->fd);
 
-        if (data != NULL) {
-                // REMEMBER to free any allocated resources
-                free(data);
-        }
+        // REMEMBER to free any allocated resources
+        maildir_close(&data->maildir);
+        free(data);
 
         close(key->fd);
+        log(INFO, "Closed connection from socket %d", key->fd);
 }
 #endif /* ifndef POP3 */

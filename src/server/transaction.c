@@ -18,21 +18,16 @@ static void handle_request(struct selector_key *key, char msg[MAX_RSP_LEN]);
 static void cmd_stat(client_data *data, char msg[MAX_RSP_LEN]);
 static void cmd_list(client_data *data, char msg[MAX_RSP_LEN]);
 static void cmd_retr(struct selector_key *key, char msg[MAX_RSP_LEN]);
-static int get_new_mails(client_data *data, maildir_mails_t **mails, unsigned long *size);
-
+static void cmd_dele(client_data *data, char msg[MAX_RSP_LEN]);
+static void cmd_rset(client_data *data, char msg[MAX_RSP_LEN]);
+static int get_new_mails(client_data *data, maildir_mails_t **mails, size_t *size,
+                         size_t *del_size);
 static char *get_next_arg(client_data *data, char buf[MAX_ARG_LEN]);
 
 void init_trans(const unsigned int state, struct selector_key *key)
 {
         client_data *data = GET_DATA(key);
         init_trans_parser(&data->parser.trans_parser, (const char *)data->user);
-}
-
-void finish_trans(const unsigned int state, struct selector_key *key)
-{
-        client_data *data = GET_DATA(key);
-        maildir_close(data->parser.trans_parser.maildir);
-        data->parser.trans_parser.maildir = NULL;
 }
 
 unsigned trans_read(struct selector_key *key)
@@ -172,6 +167,10 @@ static void handle_request(struct selector_key *key, char msg[MAX_RSP_LEN])
                 cmd_list(data, msg);
         } else if (strcmp(cmd, "RETR") == 0) {
                 cmd_retr(key, msg);
+        } else if (strcmp(cmd, "DELE") == 0) {
+                cmd_dele(data, msg);
+        } else if (strcmp(cmd, "RSET") == 0) {
+                cmd_rset(data, msg);
         } else if (strcmp(cmd, "NOOP") == 0) {
                 sprintf(msg, "+OK\r\n");
         } else {
@@ -184,21 +183,23 @@ static void handle_request(struct selector_key *key, char msg[MAX_RSP_LEN])
 static void cmd_stat(client_data *data, char msg[MAX_RSP_LEN])
 {
         maildir_mails_t *mails = NULL;
-        unsigned long size = 0;
-        if (get_new_mails(data, &mails, &size)) {
+        size_t size = 0;
+        size_t del_size = 0;
+        if (get_new_mails(data, &mails, &size, &del_size)) {
                 log(ERROR, "NULL mails");
                 sprintf(msg, "-ERR server error\r\n");
                 return;
         }
 
-        sprintf(msg, "+OK %d %ld\r\n", mails->len, size);
+        sprintf(msg, "+OK %d %ld\r\n", mails->len - mails->ndel, size - del_size);
 }
 
 static void cmd_list(client_data *data, char msg[MAX_RSP_LEN])
 {
         maildir_mails_t *mails = NULL;
-        unsigned long size = 0;
-        if (get_new_mails(data, &mails, &size) != 0) {
+        size_t size = 0;
+        size_t del_size = 0;
+        if (get_new_mails(data, &mails, &size, &del_size) != 0) {
                 log(ERROR, "NULL mails");
                 sprintf(msg, "-ERR server error\r\n");
                 return;
@@ -206,7 +207,9 @@ static void cmd_list(client_data *data, char msg[MAX_RSP_LEN])
 
         log(DEBUG, "list cmd: %s", data->parser.trans_parser.cmd);
         if (data->parser.trans_parser.total_arg == 0) {
-                sprintf(msg, "+OK %d new messages (%ld octects)\r\n", mails->len, size);
+                sprintf(msg, "+OK %d new messages (%ld octects)\r\n", mails->len - mails->ndel,
+                        size - del_size);
+                // TODO list each mail info
                 return;
         }
 
@@ -224,7 +227,10 @@ static void cmd_list(client_data *data, char msg[MAX_RSP_LEN])
                 return;
         }
 
-        sprintf(msg, "+OK %d %d\r\n", n, mails->mails[n - 1].size);
+        if (maildir_is_del(&mails->mails[n - 1]) == true)
+                sprintf(msg, "-ERR message %d deleted\r\n", n);
+        else
+                sprintf(msg, "+OK %d %d\r\n", n, mails->mails[n - 1].size);
 }
 
 static void cmd_retr(struct selector_key *key, char msg[MAX_RSP_LEN])
@@ -232,8 +238,8 @@ static void cmd_retr(struct selector_key *key, char msg[MAX_RSP_LEN])
         client_data *data = GET_DATA(key);
 
         maildir_mails_t *mails = NULL;
-        unsigned long size = 0;
-        if (get_new_mails(data, &mails, &size) != 0) {
+        size_t size = 0;
+        if (get_new_mails(data, &mails, &size, NULL) != 0) {
                 log(ERROR, "NULL mails");
                 sprintf(msg, "-ERR server error\r\n");
                 return;
@@ -253,6 +259,8 @@ static void cmd_retr(struct selector_key *key, char msg[MAX_RSP_LEN])
                 return;
         }
 
+        // Mark as read
+        maildir_set_read(&mails->mails[n - 1], false);
         sprintf(msg, "+OK %d octects\r\n", mails->mails[n - 1].size);
 
         data->sending_file = true;
@@ -270,15 +278,80 @@ static void cmd_retr(struct selector_key *key, char msg[MAX_RSP_LEN])
         selector_set_interest_key(key, OP_NOOP);
 }
 
-static int get_new_mails(client_data *data, maildir_mails_t **mails, unsigned long *size)
+static void cmd_dele(client_data *data, char msg[MAX_RSP_LEN])
 {
-        *mails = maildir_list_new(data->parser.trans_parser.maildir);
+        maildir_mails_t *mails = NULL;
+        unsigned long size = 0;
+        if (get_new_mails(data, &mails, &size, NULL) != 0) {
+                log(ERROR, "NULL mails");
+                sprintf(msg, "-ERR server error\r\n");
+                return;
+        }
+
+        if (data->parser.trans_parser.total_arg == 0) {
+                sprintf(msg, "-ERR must give message to delete, %d messages in maildrop\r\n",
+                        mails->len);
+                return;
+        }
+
+        char buf[MAX_ARG_LEN] = { 0 };
+
+        char *arg = get_next_arg(data, buf);
+        int n = atoi(arg);
+
+        if (n == 0) {
+                sprintf(msg, "-ERR could not understand argument, %d messages in maildrop\r\n",
+                        mails->len);
+                return;
+        } else if (n < 0 || (unsigned)n > mails->len) {
+                sprintf(msg, "-ERR no such message, only %d messages in maildrop\r\n", mails->len);
+                return;
+        }
+
+        if (maildir_is_del(&mails->mails[n - 1]) == true) {
+                sprintf(msg, "-ERR message %d already deleted\r\n", n);
+        } else {
+                maildir_set_del(mails, n - 1, true);
+                sprintf(msg, "+OK message %d deleted\r\n", n);
+        }
+}
+
+static void cmd_rset(client_data *data, char msg[MAX_RSP_LEN])
+{
+        maildir_mails_t *mails = NULL;
+        unsigned long size = 0;
+        if (get_new_mails(data, &mails, &size, NULL) != 0) {
+                log(ERROR, "NULL mails");
+                sprintf(msg, "-ERR server error\r\n");
+                return;
+        }
+
+        // RFC indicates that all mails should be marked as NOT deleted
+        for (size_t i = 0; i < mails->len; i++) {
+                maildir_set_del(mails, i, false);
+        }
+
+        sprintf(msg, "+OK maildrop has %d messages (%ld octects)\r\n", mails->len, size);
+}
+
+static int get_new_mails(client_data *data, maildir_mails_t **mails, size_t *size, size_t *del_size)
+{
+        *mails = maildir_list_new(&data->maildir);
         if (*mails == NULL)
                 return 1;
 
+        maildir_mails_t *m = *mails;
+
         *size = 0;
-        for (unsigned i = 0; i < (*mails)->len; i++) {
-                *size += (*mails)->mails[i].size;
+        if (del_size != NULL)
+                *del_size = 0;
+
+        for (unsigned i = 0; i < m->len; i++) {
+                *size += m->mails[i].size;
+
+                if (del_size != NULL && maildir_is_del(&m->mails[i]) == true) {
+                        *del_size += m->mails[i].size;
+                }
         }
 
         return 0;

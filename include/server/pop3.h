@@ -9,6 +9,7 @@
 #include <pop3def.h>
 #include <server/buffer.h>
 #include <server/stm.h>
+#include <utils/maildir.h>
 
 #define GET_DATA(x) ((client_data *)(x)->data)
 //32 kB of buffer
@@ -34,6 +35,7 @@ typedef struct client_data { // Add more items as we need them
         struct buffer write_buffer_client;
         struct buffer read_buffer_client;
         struct file_reader_data fr_data;
+        user_maildir_t maildir;
 } client_data;
 
 enum pop3_states {
