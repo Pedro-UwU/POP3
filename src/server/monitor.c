@@ -126,5 +126,20 @@ static void write_read_buffer_full_msg(struct selector_key* key) {
 }
 
 static void close_connection(struct selector_key* key) {
+        monitor_data* data = ((monitor_data*)(key)->data);
+        //Already closed
+        if (data->closed) {
+                return;
+        }
 
+        data->closed = true;
+        log(INFO, "Closing connection from monitor socket %d", key->fd);
+
+        selector_unregister_fd(key->s, key->fd);
+
+        if (data != NULL) {
+                // REMEMBER to free any allocated resources
+                free(data);
+        }
+        close(key->fd);
 }
