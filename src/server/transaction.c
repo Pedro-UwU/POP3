@@ -172,6 +172,8 @@ static void handle_request(struct selector_key *key, char msg[MAX_RSP_LEN])
                 cmd_list(data, msg);
         } else if (strcmp(cmd, "RETR") == 0) {
                 cmd_retr(key, msg);
+        } else if (strcmp(cmd, "NOOP") == 0) {
+                sprintf(msg, "+OK\r\n");
         } else {
                 sprintf(msg, "-ERR invalid command\r\n");
         }
