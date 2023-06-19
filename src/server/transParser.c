@@ -94,7 +94,7 @@ void free_trans_parser(void)
         free(transitions_list);
 }
 
-void init_trans_parser(trans_parser_t *parser)
+void init_trans_parser(trans_parser_t *parser, const char *user)
 {
         if (parser == NULL) {
                 log(ERROR, "Trying to initialize NULL trans pass parser");
@@ -110,6 +110,8 @@ void init_trans_parser(trans_parser_t *parser)
         parser->err_value = NO_ERROR;
         memset(parser->cmd, 0, MAX_CMD_LEN);
         memset(parser->arg, 0, MAX_ARG_LEN);
+        parser->arg_read = 0;
+        parser->maildir = maildir_open(user);
 }
 
 int trans_parse(struct selector_key *key, trans_parser_t *trans_parser, struct buffer *buffer)

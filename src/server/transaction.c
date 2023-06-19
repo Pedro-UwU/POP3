@@ -1,18 +1,32 @@
-#include "server/buffer.h"
-#include <pop3def.h>
 #include <stdint.h>
+#include <string.h> // strcmp
 #include <sys/socket.h>
-#include <utils/logger.h>
+
+#include <pop3def.h>
+#include <server/buffer.h>
 #include <server/pop3.h>
 #include <server/transaction.h>
 #include <server/parsers/transParser.h>
+#include <server/writter.h>
+#include <utils/logger.h>
+#include <utils/maildir.h> // maildir_*
 
-static void handle_request(client_data *data);
+static void handle_request(client_data *data, char msg[MAX_RSP_LEN]);
+static void cmd_stat(client_data *data, char msg[MAX_RSP_LEN]);
+static void cmd_list(client_data *data, char msg[MAX_RSP_LEN]);
+static int get_new_mails(client_data *data, maildir_mails_t **mails, unsigned long *size);
+static char *get_next_arg(client_data *data, char buf[MAX_ARG_LEN]);
 
 void init_trans(const unsigned int state, struct selector_key *key)
 {
         client_data *data = GET_DATA(key);
-        init_trans_parser(&data->parser.trans_parser);
+        init_trans_parser(&data->parser.trans_parser, (const char *)data->user);
+}
+
+void finish_trans(const unsigned int state, struct selector_key *key)
+{
+        client_data *data = GET_DATA(key);
+        maildir_close(data->parser.trans_parser.maildir);
 }
 
 unsigned trans_read(struct selector_key *key)
@@ -93,20 +107,132 @@ unsigned trans_process(struct selector_key *key)
                 return TRANSACTION;
         }
         // Hande request
-        handle_request(data);
+        char msg[MAX_RSP_LEN];
+
+        handle_request(data, msg);
+
+        ssize_t sent_bytes = write_msg(key, msg);
+        if (sent_bytes < 0) {
+                log(ERROR, "Something went wrong when sending message.");
+                return ERROR_POP3;
+        }
+
+        // TODO from here
         if (buffer_can_read(&data->write_buffer_client) == false) {
                 log(ERROR, "Nothing to read after handling the request in TRANSACTION. Socket %d",
                     key->fd);
                 return ERROR_POP3;
         }
-        init_trans_parser(parser);
+
+        init_trans_parser(parser, (const char *)data->user);
         data->is_sending = true;
         return TRANSACTION;
 }
 
-static void handle_request(client_data *data)
+static void handle_request(client_data *data, char msg[MAX_RSP_LEN])
 {
         log(DEBUG, "HANDLING CMD: %s - ARGS: %s", data->parser.trans_parser.cmd,
             data->parser.trans_parser.arg);
+
+        if (strcmp(data->parser.trans_parser.cmd, "STAT") == 0) {
+                cmd_stat(data, msg);
+        } else if (strcmp(data->parser.trans_parser.cmd, "LIST") == 0) {
+                cmd_list(data, msg);
+        } else {
+                sprintf(msg, "-ERR invalid command\r\n");
+        }
+
         data->next_state = TRANSACTION;
+}
+
+static void cmd_stat(client_data *data, char msg[MAX_RSP_LEN])
+{
+        maildir_mails_t *mails = NULL;
+        unsigned long size = 0;
+        if (get_new_mails(data, &mails, &size)) {
+                log(ERROR, "NULL mails");
+                sprintf(msg, "-ERR server error\r\n");
+                return;
+        }
+
+        sprintf(msg, "+OK %d %ld\r\n", mails->len, size);
+}
+
+static void cmd_list(client_data *data, char msg[MAX_RSP_LEN])
+{
+        maildir_mails_t *mails = NULL;
+        unsigned long size = 0;
+        if (get_new_mails(data, &mails, &size) != 0) {
+                log(ERROR, "NULL mails");
+                sprintf(msg, "-ERR server error\r\n");
+                return;
+        }
+
+        log(DEBUG, "list cmd: %s", data->parser.trans_parser.cmd);
+        if (data->parser.trans_parser.total_arg == 0) {
+                sprintf(msg, "+OK %d new messages (%ld octects)\r\n", mails->len, size);
+                return;
+        }
+
+        char buf[MAX_ARG_LEN] = { 0 };
+
+        char *arg = get_next_arg(data, buf);
+        int n = atoi(arg);
+
+        if (n == 0) {
+                sprintf(msg, "-ERR could not understand argument, %d messages in maildrop\r\n",
+                        mails->len);
+                return;
+        } else if (n < 0 || (unsigned)n > mails->len) {
+                sprintf(msg, "-ERR no such message, only %d messages in maildrop\r\n", mails->len);
+                return;
+        }
+
+        sprintf(msg, "+OK %d %d\r\n", n, mails->mails[n].size);
+}
+
+static int get_new_mails(client_data *data, maildir_mails_t **mails, unsigned long *size)
+{
+        *mails = maildir_list_new(data->parser.trans_parser.maildir);
+        if (*mails == NULL) {
+                return 1;
+        }
+
+        *size = 0;
+        for (unsigned i = 0; i < (*mails)->len; i++) {
+                *size += (*mails)->mails[i].size;
+        }
+
+        return 0;
+}
+
+static char *get_next_arg(client_data *data, char buf[MAX_ARG_LEN])
+{
+        size_t sep = 0;
+
+        int i = 0;
+        while (data->parser.trans_parser.arg_read > sep) {
+                for (; i < 1 + (MAX_ARG_LEN * MAX_ARGS); i++) {
+                        if (data->parser.trans_parser.arg[i] == ' ' ||
+                            data->parser.trans_parser.arg[i] == '\0') {
+                                sep++;
+                                i++;
+                                break;
+                        }
+                }
+        }
+
+        for (int j = 0; j < 1 + MAX_ARG_LEN; j++) {
+                if (data->parser.trans_parser.arg[i + j] == ' ' ||
+                    data->parser.trans_parser.arg[i + j] == '\0') {
+                        buf[j] = '\0';
+                        break;
+                }
+
+                buf[j] = data->parser.trans_parser.arg[i + j];
+        }
+
+        data->parser.trans_parser.arg_read++;
+
+        return buf;
 }
