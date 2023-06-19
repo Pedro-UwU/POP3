@@ -161,7 +161,7 @@ void close_connection(struct selector_key *key)
 
         data->closed = true;
         if (strlen((char *)(data->user)) > 0) {
-            user_set_state((char*)(data->user), USER_OFFLINE);
+                user_set_state((char *)(data->user), USER_OFFLINE);
         }
         log(INFO, "Closing connection from socket %d", key->fd);
 
