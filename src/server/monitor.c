@@ -3,6 +3,7 @@
 #include <server/stm.h>
 #include <server/monitor.h>
 #include <server/selector.h>
+#include <stddef.h>
 #include <stdint.h>
 #include <sys/_types/_ssize_t.h>
 #include <utils/logger.h>
@@ -30,8 +31,8 @@ static struct monitor_data_t collected_data = {
 static void handleMonitorRead(struct selector_key* key);
 static void handleMonitorWrite(struct selector_key* key);
 static void handleMonitorClose(struct selector_key* key);
+static bool write_in_buffer(buffer* buff, const char* msg, const char *log_error);
 static void write_server_down_msg(struct selector_key* key);
-static void write_read_buffer_full_msg(struct selector_key* key);
 static bool continue_sending(struct selector_key* key);
 static bool handle_error(struct selector_key* key);
 static void handle_cmd(struct selector_key* key);
@@ -99,11 +100,12 @@ void acceptMonitorRead(struct selector_key* key) {
 }
 
 static void handleMonitorRead(struct selector_key* key) {
+        monitor_data* data = ((monitor_data*)(key)->data);
         if (pop3_server_running == false) {
             write_server_down_msg(key);
+            data->is_sending = true;
             selector_set_interest_key(key, OP_WRITE);
         }
-        monitor_data* data = ((monitor_data*)(key)->data);
         if (data->is_sending == true) {
                 log(ERROR, "WTF Shouldn't be reading data when there's data to send in monitor socket %d", key->fd);
                 selector_set_interest_key(key, OP_WRITE);
@@ -112,7 +114,7 @@ static void handleMonitorRead(struct selector_key* key) {
 
         if (buffer_can_write(&data->read_buffer) == false) {
                 log(ERROR, "Read buffer full in monitor socket %d", key->fd);                
-                write_read_buffer_full_msg(key);
+                data->is_sending = true;
                 selector_set_interest_key(key, OP_WRITE);
         }
         size_t can_write = 0;
@@ -163,11 +165,34 @@ static void handleMonitorWrite(struct selector_key* key) {
 }
 
 static void write_server_down_msg(struct selector_key* key) {
-
+        static const char* msg = ":( POP3 Server is offline\r\n";
+        static const char* log_error = "Cant send server down msg";
+        monitor_data* data = ((monitor_data*)(key)->data);
+        write_in_buffer(&data->write_buffer, msg, log_error);
+        return;
 }
 
-static void write_read_buffer_full_msg(struct selector_key* key) {
-
+static bool write_in_buffer(buffer* buff, const char* msg, const char *log_error) {
+        if (msg == NULL) {
+                log(ERROR, "Can't send NULL message");
+                return false;
+        }
+        size_t len = strlen(msg);
+        if (buffer_can_write(buff) == false) {
+                if (log_error != NULL) {
+                        log(ERROR, "%s", log_error);
+                        return false;
+                }
+        }
+        size_t can_write = 0;
+        uint8_t* output_ptr = buffer_write_ptr(buff, &can_write);
+        if (can_write < len) {
+            log (ERROR, "Not enogh space in write buffer. %s", log_error);
+            return false;
+        }
+        strcpy((char*)output_ptr, msg);
+        buffer_write_adv(buff, len);
+        return true;
 }
 
 static bool continue_sending(struct selector_key* key) {
@@ -187,6 +212,15 @@ static bool continue_sending(struct selector_key* key) {
         }
         buffer_read_adv(&data->write_buffer, sent);
         return buffer_can_read(&data->write_buffer); // Return true if there's still data to send, false if not.
+}
+
+static bool handle_error(struct selector_key* key) {
+    // TODO
+    return false;
+}
+
+static void handle_cmd(struct selector_key* key) {
+    return;
 }
 
 
