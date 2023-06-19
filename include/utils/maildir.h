@@ -45,6 +45,8 @@ int maildir_set_username(user_maildir_t *maildir, const char *username);
 void maildir_close(user_maildir_t *maildir);
 
 maildir_mails_t *maildir_list_new(user_maildir_t *maildir);
+void maildir_build(user_maildir_t *maildir);
+void maildir_populate(user_maildir_t *maildir, unsigned n_mails);
 
 bool maildir_is_read(maildir_mail_t *mail);
 void maildir_set_read(maildir_mail_t *mail, bool r);

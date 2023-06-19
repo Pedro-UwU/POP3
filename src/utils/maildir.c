@@ -8,7 +8,11 @@
 #include <stdio.h> // NULL
 #include <dirent.h> // DIR
 #include <string.h> // strcpy
-#include <sys/stat.h> // stat
+#include <sys/stat.h> // stat, mkdir
+#include <stdlib.h> // mkstemp
+#include <unistd.h> // close
+#include <fcntl.h> // open
+#include <time.h> // time
 
 #include <utils/logger.h>
 #include <utils/maildir.h>
@@ -20,7 +24,10 @@
 #define MAILDIR_NEW "new"
 #define MAILDIR_TMP "tmp"
 
+inline static void set_path_folder(user_maildir_t *md, char *folder);
 static void new_mail(maildir_mail_t *mail, const char *fname, const char *dir);
+static int create_dir(char *path);
+static void rand_str(char *buf, size_t size);
 
 int maildir_open(user_maildir_t *maildir, const char *username)
 {
@@ -31,11 +38,8 @@ int maildir_open(user_maildir_t *maildir, const char *username)
 
         memset(maildir, 0, sizeof(user_maildir_t));
 
-        if (username != NULL) {
-                strcpy(maildir->user, username);
-                sprintf(maildir->path, "%s/%s/%s/", MAILDIR_ROOT, maildir->user, MAILDIR_DIR_NAME);
-                maildir->path_len = strlen(maildir->path);
-        }
+        if (username != NULL)
+                maildir_set_username(maildir, username);
 
         return 0;
 }
@@ -80,6 +84,70 @@ void maildir_close(user_maildir_t *maildir)
         maildir->new.len = 0;
 }
 
+void maildir_build(user_maildir_t *maildir)
+{
+        if (maildir == NULL) {
+                log(ERROR, "NULL maildir");
+                return;
+        }
+        if (maildir->user[0] == '\0') {
+                log(ERROR, "NULL user. Forgot to call maildir_set_username?");
+                return;
+        }
+
+        // user/Maildir/cur/
+        set_path_folder(maildir, MAILDIR_CUR);
+        create_dir(maildir->path);
+
+        // user/Maildir/new/
+        set_path_folder(maildir, MAILDIR_NEW);
+        create_dir(maildir->path);
+
+        // user/Maildir/tmp/
+        set_path_folder(maildir, MAILDIR_TMP);
+        create_dir(maildir->path);
+}
+
+void maildir_populate(user_maildir_t *maildir, unsigned n_mails)
+{
+        struct stat st;
+        srand(time(NULL));
+
+        char *tmp_path = calloc(maildir->path_len + 7, sizeof(char));
+        if (tmp_path == NULL) {
+                log(ERROR, "Could not allocate memory.");
+                goto finally;
+        }
+
+        strcpy(maildir->path + maildir->path_len, "new");
+        if (stat(maildir->path, &st) != 0) {
+                create_dir(maildir->path);
+        }
+
+        for (size_t i = 0; i < n_mails; i++) {
+                sprintf(tmp_path, "%s/XXXXXX", maildir->path);
+
+                int fd = mkstemp(tmp_path);
+                if (fd == -1) {
+                        log(ERROR, "Could not create mail.");
+                        goto finally;
+                }
+
+                char buf[2048];
+                size_t buf_len = rand() % 2048 + 1;
+                rand_str(buf, buf_len);
+
+                // Lock
+                write(fd, buf, buf_len);
+
+                close(fd);
+        }
+
+finally:
+        if (tmp_path != NULL)
+                free(tmp_path);
+}
+
 // List all
 maildir_mails_t *maildir_list_new(user_maildir_t *maildir)
 {
@@ -97,7 +165,7 @@ maildir_mails_t *maildir_list_new(user_maildir_t *maildir)
         unsigned nfiles = 0;
 
         // user/Maildir/new/
-        strcpy(&maildir->path[maildir->path_len], MAILDIR_NEW);
+        set_path_folder(maildir, MAILDIR_NEW);
 
         d = opendir(maildir->path);
         if (d == NULL)
@@ -188,6 +256,11 @@ void maildir_set_del(maildir_mails_t *mails, unsigned n, bool d)
         m->del = d;
 }
 
+inline static void set_path_folder(user_maildir_t *md, char *folder)
+{
+        strcpy(&md->path[md->path_len], folder);
+}
+
 static void new_mail(maildir_mail_t *mail, const char *fname, const char *dir)
 {
         struct stat st;
@@ -217,4 +290,77 @@ static void new_mail(maildir_mail_t *mail, const char *fname, const char *dir)
 
         mail->read = false;
         mail->del = false;
+}
+
+static int create_dir(char *path)
+{
+        struct stat st;
+        long len = strlen(path);
+        char *p = path;
+
+        // Recursively create dir with parents
+        do {
+                p++;
+
+                char *tmp = strchr(p, '/');
+                if (tmp == NULL) {
+                        p = path + len + 1;
+                } else {
+                        p = tmp;
+                        *p = '\0';
+                }
+
+                if (stat(path, &st) != 0) {
+                        if (mkdir(path, 0777) != 0) {
+                                log(ERROR, "Could not create dir '%s'", path);
+                                return -1;
+                        }
+                }
+
+                if (p - path <= len)
+                        *p = '/';
+
+        } while (p - path < len);
+
+        return 0;
+}
+
+static void rand_str(char *buf, size_t size)
+{
+        if (size == 0)
+                return;
+
+        int fd = -1;
+        unsigned char *buffer = NULL;
+
+        fd = open("/dev/urandom", O_RDONLY);
+        if (fd == -1) {
+                log(ERROR, "Could not open /dev/urandom o.O");
+                goto finally;
+        }
+
+        buffer = (unsigned char *)malloc(size);
+        if (buffer == NULL) {
+                log(ERROR, "Could not allocate memory.");
+                goto finally;
+        }
+
+        // Lock
+        ssize_t bytesRead = read(fd, buffer, size);
+        if (bytesRead == -1) {
+                log(ERROR, "Could not read from fd %d.", fd);
+                goto finally;
+        }
+
+        // Convert everything to ASCII
+        for (size_t i = 0; i < size; i++) {
+                buf[i] = buffer[i] % 94 + 33;
+        }
+
+finally:
+        if (fd > -1)
+                close(fd);
+
+        if (buffer != NULL)
+                free(buffer);
 }
