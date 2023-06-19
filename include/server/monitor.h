@@ -2,11 +2,11 @@
 #define MONITOR_H
 #include <server/stm.h>
 #include <server/buffer.h>
+#include <server/parsers/monitorParser.h>
+#include <monitordef.h>
 #include <stdbool.h>
 #include <stdint.h>
 
-#define MONITOR_BUFFER_SIZE 1024
-#define MONITOR_MAX_ARG_LEN 40
 
 typedef struct monitor_data {
     bool closed;
@@ -17,6 +17,7 @@ typedef struct monitor_data {
     int client_fd;
     struct buffer write_buffer;
     struct buffer read_buffer;
+    monitor_parser_t monitor_parser;
 } monitor_data;
 
 void init_monitor(void);

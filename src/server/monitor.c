@@ -1,3 +1,4 @@
+#include "server/parsers/monitorParser.h"
 #include <server/buffer.h>
 #include <server/stm.h>
 #include <server/monitor.h>
@@ -12,7 +13,7 @@
 
 static bool pop3_server_running = false;
 
-static struct monitor_data_t {
+struct monitor_data_t {
     unsigned long sent_bytes;
     unsigned long curr_connections;
     unsigned long total_connections;
@@ -42,7 +43,7 @@ static struct fd_handler monitor_handle = {
 };
 
 
-void init_new_monitor_data(monitor_data* data, int fd, struct sockaddr_storage address) {
+static void init_new_monitor_data(monitor_data* data, int fd) {
     data->logged = false;
     data->closed = false;
     data->is_sending = false;
@@ -51,6 +52,7 @@ void init_new_monitor_data(monitor_data* data, int fd, struct sockaddr_storage a
     memset(&data->read_buffer_data, 0, MONITOR_BUFFER_SIZE);
     buffer_init(&data->write_buffer, MONITOR_BUFFER_SIZE, data->write_buffer_data);
     buffer_init(&data->read_buffer, MONITOR_BUFFER_SIZE, data->read_buffer_data);
+    init_monitor_parser(&data->monitor_parser);
 }
 
 void acceptMonitorRead(struct selector_key* key) {
@@ -77,7 +79,7 @@ void acceptMonitorRead(struct selector_key* key) {
                 return;
         }
 
-        init_new_monitor_data(monitor_data_ptr, new_client_socket, address);
+        init_new_monitor_data(monitor_data_ptr, new_client_socket);
 
         selector_status status = selector_register(key->s, new_client_socket, &monitor_handle,
                                                    OP_WRITE /* it starts with a greeting */,
@@ -141,12 +143,12 @@ static void handleMonitorWrite(struct selector_key* key) {
             }
             return;
         }
+
+
         // parse read_buffer
         // if parse ended
         //     process command
         //     is_sending = true
-
-
 }
 
 static void write_server_down_msg(struct selector_key* key) {

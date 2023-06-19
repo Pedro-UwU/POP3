@@ -1,0 +1,7 @@
+#ifndef MONITOR_DEF_H
+#define MONITOR_DEF_H
+
+#define MONITOR_BUFFER_SIZE 1024
+#define MONITOR_MAX_ARG_LEN 40
+#define MONITOR_MAX_CMD_LEN 40
+#endif // !MONITOR_DEF_H
