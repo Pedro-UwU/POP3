@@ -26,6 +26,7 @@ readonly SCRIPT_DIR="$(dirname "${BASH_SOURCE[0]}")"
 pushd "$SCRIPT_DIR" &> /dev/null || exit 1
 
 SOURCES=(           \
+        "../include/"   \
         "../src/"   \
         "../test/"   \
     )
