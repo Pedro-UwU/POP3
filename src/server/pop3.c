@@ -3,11 +3,14 @@
 
 #include "pop3def.h"
 #include "server/buffer.h"
+#include "server/fileReader.h"
+#include "server/user.h"
 #include <server/stm.h>
 #include <server/pop3.h>
 #include <server/selector.h>
 #include <server/auth.h>
 #include <server/transaction.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
@@ -118,6 +121,7 @@ static void init_new_client_data(client_data *data, int new_fd,
         buffer_init(&data->read_buffer_client, BUFFER_SIZE, data->read_buffer_data);
         buffer_init(&data->write_buffer_client, BUFFER_SIZE, data->write_buffer_data);
         memset(data->user, 0, MAX_ARG_LEN + 1); // Set user buffer to null;
+        memset(&data->fr_data, 0, sizeof(struct file_reader_data));
 
         stm_init(&data->stm);
 }
@@ -156,6 +160,9 @@ void close_connection(struct selector_key *key)
         }
 
         data->closed = true;
+        if (strlen((char *)(data->user)) > 0) {
+            user_set_state((char*)(data->user), USER_OFFLINE);
+        }
         log(INFO, "Closing connection from socket %d", key->fd);
 
         selector_unregister_fd(key->s, key->fd);
