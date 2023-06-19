@@ -1,5 +1,6 @@
 #include "server/parsers/transParser.h"
 #include <server/parsers/authParser.h>
+#include <stdio.h>
 #include <string.h>
 #include <unistd.h>
 #include <signal.h>
@@ -26,6 +27,7 @@ int main(void)
 {
         setLogLevel(DEBUG);
         unsigned int port = 60711;
+        unsigned int monitor_port = 60401;
         // TODO: Receive port via args
         user_add("USER1", "12345");
 
@@ -35,10 +37,19 @@ int main(void)
         selector_status ss = SELECTOR_SUCCESS;
         fd_selector selector = NULL;
 
+
+        // Create master POP3 socket
         int masterSocket = createTCPSocketServer(port);
         if (masterSocket < 0) {
                 log(FATAL, "Couln't create master socket");
                 goto finally;
+        }
+
+        // Create master Monitor Socket
+        int monitorSocket = createTCPSocketServer(monitor_port);
+        if (monitorSocket < 0) {
+            log(FATAL, "Couldn't create monitor socket");
+            goto finally;
         }
 
         // Register signal handlers
@@ -112,6 +123,9 @@ finally:
 
         if (masterSocket >= 0) {
                 close(masterSocket);
+        }
+        if (monitorSocket >= 0) {
+                close(monitorSocket);
         }
 
         selector_close();
