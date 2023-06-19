@@ -11,7 +11,7 @@ This markdown file presents a simple and text-based monitor protocol for POP3 se
 - All subsequent strings are considered arguments
 - Arguments can be 40 characters long at maximum
 - Arguments can be upper and lowercase
-- All responses begging with "OwO ", in case of success or "UwU ", in case of an error
+- All responses begin with "OwO ", in case of success or "UwU ", in case of an error
 - Authentication is required. Who sets up the monitoring server is responsible for setting up at least one user. Without authentication only `LOGIN` and `QUIT` commands are avaiable.
 ## Commands
 - QUIT
