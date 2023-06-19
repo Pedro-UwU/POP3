@@ -3,6 +3,7 @@
 #include <server/monitor.h>
 #include <server/selector.h>
 #include <stdint.h>
+#include <sys/_types/_ssize_t.h>
 #include <utils/logger.h>
 #include <sys/socket.h>
 #include <string.h>
@@ -11,18 +12,35 @@
 
 static bool pop3_server_running = false;
 
+static struct monitor_data_t {
+    unsigned long sent_bytes;
+    unsigned long curr_connections;
+    unsigned long total_connections;
+    char** user_list;
+};
+
+static struct monitor_data_t collected_data = {
+    .sent_bytes = 0,
+    .curr_connections = 0,
+    .total_connections = 0,
+    .user_list = NULL,
+};
+
 static void handleMonitorRead(struct selector_key* key);
 static void handleMonitorWrite(struct selector_key* key);
 static void handleMonitorClose(struct selector_key* key);
 static void write_server_down_msg(struct selector_key* key);
 static void write_read_buffer_full_msg(struct selector_key* key);
+static bool continue_sending(struct selector_key* key);
 static void close_connection(struct selector_key* key);
+
 
 static struct fd_handler monitor_handle = {
     .handle_read = handleMonitorRead,
     .handle_write = handleMonitorWrite,
     .handle_close = handleMonitorClose,
 };
+
 
 void init_new_monitor_data(monitor_data* data, int fd, struct sockaddr_storage address) {
     data->logged = false;
@@ -110,11 +128,25 @@ static void handleMonitorRead(struct selector_key* key) {
 }
     
 static void handleMonitorClose(struct selector_key* key) {
+        close_connection(key);
 
 }
 
 static void handleMonitorWrite(struct selector_key* key) {
-    
+        monitor_data* data = ((monitor_data*)(key)->data);
+        if (data->is_sending) {
+            bool data_remaining = continue_sending(key);
+            if (data_remaining == false) {
+                selector_set_interest_key(key, OP_READ);
+            }
+            return;
+        }
+        // parse read_buffer
+        // if parse ended
+        //     process command
+        //     is_sending = true
+
+
 }
 
 static void write_server_down_msg(struct selector_key* key) {
@@ -124,6 +156,26 @@ static void write_server_down_msg(struct selector_key* key) {
 static void write_read_buffer_full_msg(struct selector_key* key) {
 
 }
+
+static bool continue_sending(struct selector_key* key) {
+        monitor_data* data = ((monitor_data*)(key)->data);
+        
+        if (buffer_can_read(&data->write_buffer) == false) {
+            selector_set_interest_key(key, OP_READ);
+        }
+
+        size_t can_read = 0;
+        uint8_t* output_buffer = buffer_read_ptr(&data->write_buffer, &can_read);
+        ssize_t sent = send(key->fd, output_buffer, can_read, 0);
+        if (sent < 0) {
+            log(ERROR, "Something went wring in send in monitor socket %d", key->fd);
+            close_connection(key);
+            return false;
+        }
+        buffer_read_adv(&data->write_buffer, sent);
+        return buffer_can_read(&data->write_buffer); // Return true if there's still data to send, false if not.
+}
+
 
 static void close_connection(struct selector_key* key) {
         monitor_data* data = ((monitor_data*)(key)->data);
