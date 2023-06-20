@@ -16,12 +16,7 @@ This markdown file presents a simple and text-based monitor protocol for POP3 se
 - Multiline response end with a empty line. 
 ## Commands
 - QUIT
-	- Closes the connection.
-	Example:
-	```
-	C: QUIT
-	S: OwO Goodbye!
-	```
+	- Closes the connection
 - LOGIN \<user> \<password>
 	- Needed for authentication. 
 - GET_USERS
