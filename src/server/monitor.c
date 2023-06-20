@@ -39,7 +39,6 @@ static void close_connection(struct selector_key *key);
 
 static void handleMonitorRead(struct selector_key *key)
 {
-        log(DEBUG, "READING");
         monitor_data *data = ((monitor_data *)(key)->data);
         if (data->is_sending == true) {
                 log(ERROR,
@@ -67,7 +66,6 @@ static void handleMonitorRead(struct selector_key *key)
                 close_connection(key);
                 return;
         }
-        log(DEBUG, "Have Read \"%s\" - Len: %d", read_buffer, (int)strlen(read_buffer));
         buffer_write_adv(&data->read_buffer, read_bytes);
         selector_set_interest_key(key, OP_WRITE);
 }
@@ -105,7 +103,6 @@ static void handleMonitorWrite(struct selector_key *key)
                     return;
                 }
                 data->is_sending = true;
-                log(DEBUG, "About to reset monitor parser");
                 init_monitor_parser(parser);
                 return;
         }

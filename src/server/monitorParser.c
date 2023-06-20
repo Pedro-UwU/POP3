@@ -124,7 +124,6 @@ int monitor_parse(struct selector_key *key, monitor_parser_t *monitor_parser, st
                 state = process_char(key, monitor_parser->parser, monitor_parser->state_id,
                                      c);
                 uint8_t* to_delete2 = buffer_read_ptr(buffer, &aux);
-                log(DEBUG, "Read %c (%d) and new state is %d. Pointer diff = %d - read_ptr = %p - write_ptr = %p", c, (int)c, state, (int)(to_delete2 - to_delete), buffer->read, buffer->write);
                 monitor_parser->state_id = state;
         }
         //log(DEBUG, "Current Pass Parser State %ld", monitor_parser->state_id);
