@@ -1,3 +1,4 @@
+#include "server/monitor.h"
 #include <stdint.h>
 #include <string.h> // strcmp
 #include <sys/socket.h>
@@ -140,6 +141,7 @@ static unsigned send_data(struct selector_key *key)
         size_t can_send = MIN(bytes_to_send, MAX_BYTES_SEND);
 
         ssize_t sent = send(key->fd, bytes, can_send, 0);
+        monitor_add_sent_bytes(sent);
         if (sent < 0) {
                 data->err_code = UNKNOWN_ERROR;
                 return ERROR_POP3;
@@ -196,6 +198,7 @@ static unsigned send_terminator(struct selector_key *key)
         size_t can_send = MIN(bytes_to_send, MAX_BYTES_SEND);
 
         ssize_t sent = send(key->fd, bytes, can_send, 0);
+        monitor_add_sent_bytes(sent);
         if (sent < 0) {
                 data->err_code = UNKNOWN_ERROR;
                 return ERROR_POP3;

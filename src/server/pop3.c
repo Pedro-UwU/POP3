@@ -9,6 +9,7 @@
 #include <server/pop3.h>
 #include <server/selector.h>
 #include <server/auth.h>
+#include <server/monitor.h>
 #include <server/transaction.h>
 #include <server/update.h>
 #include <stdint.h>
@@ -108,6 +109,7 @@ void pop3AcceptPassive(struct selector_key *key)
         }
 
         log(INFO, "New client in socket %d has been registered into seletor", new_client_socket);
+        monitor_add_connection();
         return;
 }
 
@@ -184,6 +186,7 @@ void close_connection(struct selector_key *key)
         free(data);
 
         close(key->fd);
+        monitor_close_connection();
         log(INFO, "Closed connection from socket %d", key->fd);
 }
 #endif /* ifndef POP3 */

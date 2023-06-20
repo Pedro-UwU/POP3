@@ -22,7 +22,7 @@ typedef struct monitor_data {
 } monitor_data;
 
 struct monitor_collection_data_t {
-        unsigned long sent_bytes;
+        unsigned long long sent_bytes;
         unsigned long curr_connections;
         unsigned long total_connections;
         user_t *user_list;
@@ -32,6 +32,8 @@ void init_monitor(void);
 void monitor_add_sent_bytes(unsigned long bytes);
 void monitor_user_online(void);
 void monitor_user_offline(void);
+void monitor_add_connection(void);
+void monitor_close_connection(void);
 void acceptMonitorConnection(struct selector_key *key);
 
 #endif // !MONITOR_H

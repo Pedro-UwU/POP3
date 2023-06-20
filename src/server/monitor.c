@@ -169,7 +169,7 @@ void acceptMonitorConnection(struct selector_key *key)
 
 static void write_server_down_msg(struct selector_key *key)
 {
-        static const char *msg = "UwU POP3 Server is offline\r\n";
+        static const char *msg = "UwU POP3 Server is offline\r\n\r\n";
         static const char *log_error = "Cant send server down msg";
         monitor_data *data = ((monitor_data *)(key)->data);
         write_in_buffer(&data->write_buffer, msg, log_error);
@@ -234,27 +234,27 @@ static bool handle_error(struct selector_key *key)
         }
 
         if (err_code == MONITOR_UNKNOWN_ERROR) {
-                write_in_buffer(output_buffer, "UwU Unexpected Error\r\n", NULL);
+                write_in_buffer(output_buffer, "UwU Unexpected Error\r\n\r\n", NULL);
                 return false;
         }
 
         if (err_code == MONITOR_WRONG_LOGIN) {
-                write_in_buffer(output_buffer, "UwU Wrong username or password\r\n", NULL);
+                write_in_buffer(output_buffer, "UwU Wrong username or password\r\n\r\n", NULL);
                 return true;
         }
 
         if (err_code == MONITOR_INVALID_ARG) {
-                write_in_buffer(output_buffer, "UwU Invalid Argument\r\n", NULL);
+                write_in_buffer(output_buffer, "UwU Invalid Argument\r\n\r\n", NULL);
                 return true;
         }
 
         if (err_code == MONITOR_INVALID_USER) {
-                write_in_buffer(output_buffer, "UwU Sorry that user doesn't exists\r\n", NULL);
+                write_in_buffer(output_buffer, "UwU Sorry that user doesn't exists\r\n\r\n", NULL);
                 return true;
         }
 
         if (err_code == MONITOR_INVALID_CMD) {
-                write_in_buffer(output_buffer, "UwU Invalid command\r\n", NULL);
+                write_in_buffer(output_buffer, "UwU Invalid command\r\n\r\n", NULL);
                 return true;
         }
 
@@ -270,16 +270,16 @@ static bool handle_cmd(struct selector_key *key)
         if (strcmp(cmd, "LOGIN") == 0) {
                 monitor_login_cmd(data);
                 if (data->err_code == MONITOR_NO_ERROR) {
-                        sprintf(msg, "OwO Successfully logged\r\n");
+                        sprintf(msg, "OwO Successfully logged\r\n\r\n");
                 }
         } else if (strcmp(cmd, "QUIT") == 0) {
                 return false;
         } else if (strcmp(cmd, "GET_CURR_CONN") == 0) {
-                sprintf(msg, "OwO %ld\r\n", collected_data.curr_connections);
+                sprintf(msg, "OwO %ld\r\n\r\n", collected_data.curr_connections);
         } else if (strcmp(cmd, "GET_TOTAL_CONN") == 0) {
-                sprintf(msg, "OwO %ld\r\n", collected_data.total_connections);
+                sprintf(msg, "OwO %ld\r\n\r\n", collected_data.total_connections);
         } else if (strcmp(cmd, "GET_SENT_BYTES") == 0) {
-                sprintf(msg, "OwO %ld\r\n", collected_data.sent_bytes);
+                sprintf(msg, "OwO %llu\r\n\r\n", collected_data.sent_bytes);
         } else if (strcmp(cmd, "GET_USERS") == 0) {
                 if (collected_data.user_list == NULL) {
                         data->err_code = MONITOR_NOT_USER_LIST;
@@ -325,4 +325,17 @@ static void close_connection(struct selector_key *key)
                 free(data);
         }
         close(key->fd);
+}
+
+void monitor_add_sent_bytes(unsigned long bytes) {
+    collected_data.sent_bytes += bytes;
+}
+
+void monitor_add_connection(void) {
+    collected_data.curr_connections += 1;
+    collected_data.total_connections += 1;
+}
+
+void monitor_close_connection(void) {
+    collected_data.curr_connections -= 1;
 }
