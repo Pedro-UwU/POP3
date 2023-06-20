@@ -3,19 +3,14 @@
 #include <stddef.h>
 #include <string.h>
 
-#define MAX_USERS 512
-
-static char users[MAX_USERS][MAX_ARG_LEN] = { { 0 } };
-static char passwords[MAX_USERS][MAX_ARG_LEN] = { { 0 } };
-static unsigned states[MAX_USERS] = { 0 };
-static size_t total_users = 0;
+static user_t users[MAX_USERS] = { 0 };
 
 bool user_is_connected(const char *user)
 {
-        for (size_t i = 0; i < total_users; i++) {
-                char *aux_user = users[i];
-                if (strcmp(user, aux_user) == 0) {
-                        if (states[i] == USER_ONLINE)
+        for (size_t i = 0; i < MAX_USERS; i++) {
+                user_t aux_user = users[i];
+                if (strcmp(user, aux_user.uname) == 0) {
+                        if (users[i].state == USER_ONLINE)
                                 return true;
                         return false;
                 }
@@ -25,10 +20,10 @@ bool user_is_connected(const char *user)
 
 unsigned user_get_state(const char *user)
 {
-        for (size_t i = 0; i < total_users; i++) {
-                char *aux_user = users[i];
-                if (strcmp(user, aux_user) == 0) {
-                        return states[i];
+        for (size_t i = 0; i < MAX_USERS; i++) {
+                user_t aux_user = users[i];
+                if (strcmp(user, aux_user.uname) == 0) {
+                        return users[i].state;
                 }
         }
         return USER_NOT_FOUND;
@@ -38,19 +33,19 @@ void user_set_state(const char *user, unsigned state)
         if (state >= USER_NOT_FOUND) {
                 return;
         }
-        for (size_t i = 0; i < total_users; i++) {
-                char *aux_user = users[i];
-                if (strcmp(user, aux_user) == 0) {
-                        states[i] = state;
+        for (size_t i = 0; i < MAX_USERS; i++) {
+                user_t aux_user = users[i];
+                if (strcmp(user, aux_user.uname) == 0) {
+                        users[i].state = state;
                 }
         }
 }
 
 bool user_exists(const char *user)
 {
-        for (size_t i = 0; i < total_users; i++) {
-                char *aux_user = users[i];
-                if (strcmp(user, aux_user) == 0) {
+        for (size_t i = 0; i < MAX_USERS; i++) {
+                user_t aux_user = users[i];
+                if (strcmp(user, aux_user.uname) == 0) {
                         return true;
                 }
         }
@@ -59,11 +54,10 @@ bool user_exists(const char *user)
 int user_add(const char *user, const char *pass)
 {
         for (size_t i = 0; i < MAX_USERS; i++) {
-                if (users[i][0] == 0) {
-                        strcpy(users[i], user);
-                        strcpy(passwords[i], pass);
-                        states[i] = USER_OFFLINE;
-                        total_users++;
+                if (users[i].uname[0] == '\0') {
+                        strcpy(users[i].uname, user);
+                        strcpy(users[i].pass, pass);
+                        users[i].state = USER_OFFLINE;
                         return 0;
                 }
         }
@@ -72,14 +66,19 @@ int user_add(const char *user, const char *pass)
 
 bool user_check_pass(const char *user, const char *pass)
 {
-        for (size_t i = 0; i < total_users; i++) {
-                char *aux_user = users[i];
-                if (strcmp(user, aux_user) == 0) {
-                        if (strcmp(pass, passwords[i]) == 0) {
+        for (size_t i = 0; i < MAX_USERS; i++) {
+                user_t aux_user = users[i];
+                if (strcmp(user, aux_user.uname) == 0) {
+                        if (strcmp(pass, users[i].pass) == 0) {
                                 return true;
                         }
                         return false;
                 }
         }
         return false;
+}
+
+struct user_t *get_user_array(void)
+{
+        return users;
 }

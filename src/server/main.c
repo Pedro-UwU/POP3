@@ -1,3 +1,9 @@
+#include "server/monitor.h"
+#include "server/parsers/authParser.h"
+#include "server/parsers/monitorParser.h"
+#include "server/parsers/transParser.h"
+#include <server/pop3.h>
+#include <stdio.h>
 #include <string.h>
 #include <unistd.h>
 #include <signal.h>
@@ -27,6 +33,9 @@ int main(void)
 {
         setLogLevel(DEBUG);
         unsigned int port = 60711;
+        unsigned int monitor_port = 60401;
+
+        init_monitor();
         // TODO: Receive port via args
         user_add("USER1", "12345");
 
@@ -36,9 +45,17 @@ int main(void)
         selector_status ss = SELECTOR_SUCCESS;
         fd_selector selector = NULL;
 
+        // Create master POP3 socket
         int masterSocket = createTCPSocketServer(port);
         if (masterSocket < 0) {
                 log(FATAL, "Couln't create master socket");
+                goto finally;
+        }
+
+        // Create master Monitor Socket
+        int monitorSocket = createTCPSocketServer(monitor_port);
+        if (monitorSocket < 0) {
+                log(FATAL, "Couldn't create monitor socket");
                 goto finally;
         }
 
@@ -47,6 +64,11 @@ int main(void)
         signal(SIGTSTP, handleSignal);
 
         if (selector_fd_set_nio(masterSocket) == -1) {
+                err_msg = "getting server socket flags";
+                goto finally;
+        }
+
+        if (selector_fd_set_nio(monitorSocket) == -1) {
                 err_msg = "getting server socket flags";
                 goto finally;
         }
@@ -83,10 +105,23 @@ int main(void)
                 goto finally;
         }
 
+        const struct fd_handler masterMonitorHandler = {
+                .handle_read = acceptMonitorConnection,
+                .handle_write = NULL,
+                .handle_close = NULL,
+        };
+
+        ss = selector_register(selector, monitorSocket, &masterMonitorHandler, OP_READ, NULL);
+
+        if (ss != SELECTOR_SUCCESS) {
+                err_msg = "Error registering master monitor handler";
+                goto finally;
+        }
+
         conf_auth_parser();
         conf_trans_parser();
         conf_update_parser();
-
+        conf_monitor_parser();
         while (serverRunning) {
                 err_msg = NULL;
                 ss = selector_select(selector);
@@ -115,12 +150,16 @@ finally:
         if (masterSocket >= 0) {
                 close(masterSocket);
         }
+        if (monitorSocket >= 0) {
+                close(monitorSocket);
+        }
 
         selector_close();
 
         free_auth_parser();
         free_trans_parser();
         free_update_parser();
+        free_monitor_parser();
 
         return ret;
 }
