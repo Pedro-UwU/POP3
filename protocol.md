@@ -13,7 +13,8 @@ This markdown file presents a simple and text-based monitor protocol for POP3 se
 - Arguments can be upper and lowercase
 - All responses begin with "OwO ", in case of success or "UwU ", in case of an error
 - Authentication is required. Who sets up the monitoring server is responsible for setting up at least one user. Without authentication only `LOGIN` and `QUIT` commands are available.
-- Multiline response end with a empty line. 
+- All responses end with two CRLF octets
+- Pipelining is supported
 ## Commands
 - QUIT
 	- Closes the connection
@@ -28,15 +29,18 @@ This markdown file presents a simple and text-based monitor protocol for POP3 se
  	S: user2 ONLINE
  	S: user3 ONLINE
  	S: user4 LOGGING_IN
+	S:
  	```
 - GET_USER \<username>
 	- Returns the existence of a user and it's status. For example:
 	```
 	C: GET_USER user1
 	S: UwU User doesn't exists
+	S:
 	...
 	C: GET_USER user2
 	S: OwO user2 ONLINE
+	S:
 	```
 - GET_CURR_CONN:
 	- Returns an integer indicating how many users are connected to the server (Not including the monitor users).
@@ -44,9 +48,11 @@ This markdown file presents a simple and text-based monitor protocol for POP3 se
 	```
 	C: GET_CURR_CONN
 	S: OwO 134
+	S:
 	...
 	C: GET_CURR_CONN
 	S: UwU Server offline
+	S:
 	```
 - GET_TOTAL_CONN
 	- Returns an integer indicating how many connections have been opened. Similar to *GET_CURR_CONN*
@@ -57,6 +63,7 @@ This markdown file presents a simple and text-based monitor protocol for POP3 se
 	```
 	C: GET_SENT_BYTES
 	S: OwO 747772166374
+	S:
 	```
 - ADD_USER \<username> \<password>
 	- Creates a new user **for the server**, not for the monitor server. 
@@ -64,12 +71,15 @@ This markdown file presents a simple and text-based monitor protocol for POP3 se
 	```
 	C: ADD_USER user_foo 123pass
 	S: UwU User already exists
+	S:
 	...
 	C: ADD_USER user_foo 123pass
 	S: UwU Maximum number of users reached.
+	S:
 	...
 	C: ADD_USER user_foo 123pass
 	S: OwO User created!
+	S:
 	``` 
  - POPULATE_USER \<username>
 	 - Fills the maildir of a user with 10 random mails. Mails have random sizes between 16KB to 64MB.
@@ -77,9 +87,11 @@ This markdown file presents a simple and text-based monitor protocol for POP3 se
 	```
 	C: POPULATE_USER user_foo
 	S: UwU User doesn't exist
+	S:
 	...
 	C: POPULATE_USER user1
 	S: OwO Maildir populated
+	S:
 	```
  - DELETE_USER \<username>
 	 - Removes the given user. If the user doesn't exist, still returns success.
@@ -87,6 +99,5 @@ This markdown file presents a simple and text-based monitor protocol for POP3 se
 	```
 	C: DELETE_USER user_1
 	S: OwO Deleted
+	S:
 	```
- - CAPA
-   	- Displays all the available commands
