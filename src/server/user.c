@@ -3,9 +3,7 @@
 #include <stddef.h>
 #include <string.h>
 
-
-static user_t users[MAX_USERS] = {0};
-
+static user_t users[MAX_USERS] = { 0 };
 
 bool user_is_connected(const char *user)
 {
@@ -78,4 +76,9 @@ bool user_check_pass(const char *user, const char *pass)
                 }
         }
         return false;
+}
+
+struct user_t *get_user_array(void)
+{
+        return users;
 }

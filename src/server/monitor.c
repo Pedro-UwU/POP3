@@ -8,6 +8,7 @@
 #include <server/monitorCommands.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <server/user.h>
 #include <stdio.h>
 #include <utils/logger.h>
 #include <sys/socket.h>
@@ -15,16 +16,7 @@
 
 #define MAX_SOCKETS 1023
 
-static bool pop3_server_running = true;
-
-struct monitor_data_t {
-        unsigned long sent_bytes;
-        unsigned long curr_connections;
-        unsigned long total_connections;
-        char **user_list;
-};
-
-static struct monitor_data_t collected_data = {
+static struct monitor_collection_data_t collected_data = {
         .sent_bytes = 0,
         .curr_connections = 0,
         .total_connections = 0,
@@ -37,6 +29,11 @@ static bool continue_sending(struct selector_key *key);
 static bool handle_error(struct selector_key *key);
 static bool handle_cmd(struct selector_key *key);
 static void close_connection(struct selector_key *key);
+
+void init_monitor(void)
+{
+        collected_data.user_list = get_user_array();
+}
 
 static void handleMonitorRead(struct selector_key *key)
 {
@@ -100,8 +97,8 @@ static void handleMonitorWrite(struct selector_key *key)
                 }
                 bool can_continue = handle_cmd(key);
                 if (can_continue == false) {
-                    close_connection(key);
-                    return;
+                        close_connection(key);
+                        return;
                 }
                 data->is_sending = true;
                 init_monitor_parser(parser);
@@ -109,7 +106,6 @@ static void handleMonitorWrite(struct selector_key *key)
         }
         selector_set_interest_key(key, OP_READ);
 }
-
 
 static struct fd_handler monitor_handle = {
         .handle_read = handleMonitorRead,
@@ -131,7 +127,7 @@ static void init_new_monitor_data(monitor_data *data, int fd)
         init_monitor_parser(&data->monitor_parser);
 }
 
-void acceptMonitorConnection(struct selector_key *key) 
+void acceptMonitorConnection(struct selector_key *key)
 {
         struct sockaddr_storage address;
         socklen_t address_len = sizeof(address);
@@ -158,8 +154,7 @@ void acceptMonitorConnection(struct selector_key *key)
         init_new_monitor_data(monitor_data_ptr, new_client_socket);
 
         selector_status status = selector_register(key->s, new_client_socket, &monitor_handle,
-                                                   OP_READ,
-                                                   monitor_data_ptr);
+                                                   OP_READ, monitor_data_ptr);
 
         if (status != SELECTOR_SUCCESS) {
                 log(ERROR, "New monitor socket %d registering failed", new_client_socket);
@@ -171,7 +166,6 @@ void acceptMonitorConnection(struct selector_key *key)
         log(INFO, "New client in socket %d has been registered into seletor", new_client_socket);
         return;
 }
-
 
 static void write_server_down_msg(struct selector_key *key)
 {
@@ -230,37 +224,37 @@ static bool continue_sending(struct selector_key *key)
 static bool handle_error(struct selector_key *key)
 {
         monitor_data *data = ((monitor_data *)(key)->data);
-        buffer* output_buffer = &data->write_buffer;
+        buffer *output_buffer = &data->write_buffer;
         unsigned err_code = data->err_code;
         if (err_code == MONITOR_NO_ERROR) {
-            log(ERROR, "Handling error when error code is NO ERROR monitoring socket %d", key->fd);
-            return true;
+                log(ERROR, "Handling error when error code is NO ERROR monitoring socket %d",
+                    key->fd);
+                return true;
         }
-
 
         if (err_code == MONITOR_UNKNOWN_ERROR) {
-            write_in_buffer(output_buffer, "UwU Unexpected Error\r\n", NULL);
-            return false;
+                write_in_buffer(output_buffer, "UwU Unexpected Error\r\n", NULL);
+                return false;
         }
-        
+
         if (err_code == MONITOR_WRONG_LOGIN) {
-            write_in_buffer(output_buffer, "UwU Wrong username or password\r\n", NULL);
-            return true;
+                write_in_buffer(output_buffer, "UwU Wrong username or password\r\n", NULL);
+                return true;
         }
 
         if (err_code == MONITOR_INVALID_ARG) {
-            write_in_buffer(output_buffer, "UwU Invalid Argument\r\n", NULL);
-            return true;
+                write_in_buffer(output_buffer, "UwU Invalid Argument\r\n", NULL);
+                return true;
         }
 
         if (err_code == MONITOR_INVALID_USER) {
-            write_in_buffer(output_buffer, "UwU Sorry that user doesn't exists\r\n", NULL);
-            return true;
+                write_in_buffer(output_buffer, "UwU Sorry that user doesn't exists\r\n", NULL);
+                return true;
         }
 
         if (err_code == MONITOR_INVALID_CMD) {
-            write_in_buffer(output_buffer, "UwU Invalid command\r\n", NULL);
-            return true;
+                write_in_buffer(output_buffer, "UwU Invalid command\r\n", NULL);
+                return true;
         }
 
         return false;
@@ -271,20 +265,26 @@ static bool handle_cmd(struct selector_key *key)
         monitor_data *data = ((monitor_data *)(key)->data);
         monitor_parser_t *parser = &data->monitor_parser;
         char *cmd = parser->cmd;
-        char msg[1024] = {0};
+        char msg[1024] = { 0 };
         if (strcmp(cmd, "LOGIN") == 0) {
                 monitor_login_cmd(data);
                 if (data->err_code == MONITOR_NO_ERROR) {
-                    sprintf(msg, "OwO Successfully logged\r\n");
+                        sprintf(msg, "OwO Successfully logged\r\n");
                 }
         } else if (strcmp(cmd, "QUIT") == 0) {
                 return false;
         } else if (strcmp(cmd, "GET_CURR_CONN") == 0) {
-                sprintf(msg, "OwO %ld\r\n", collected_data.curr_connections); 
+                sprintf(msg, "OwO %ld\r\n", collected_data.curr_connections);
         } else if (strcmp(cmd, "GET_TOTAL_CONN") == 0) {
                 sprintf(msg, "OwO %ld\r\n", collected_data.total_connections);
         } else if (strcmp(cmd, "GET_SENT_BYTES") == 0) {
                 sprintf(msg, "OwO %ld\r\n", collected_data.sent_bytes);
+        } else if (strcmp(cmd, "GET_USERS") == 0) {
+                if (collected_data.user_list == NULL) {
+                        data->err_code = MONITOR_NOT_USER_LIST;
+                } else {
+                        monitor_get_users_cmd(&collected_data, data, msg, 1024);
+                }
         }
         /* else if to all the commands */
         else {
@@ -292,7 +292,7 @@ static bool handle_cmd(struct selector_key *key)
         }
 
         if (data->err_code != MONITOR_NO_ERROR) {
-            return handle_error(key);
+                return handle_error(key);
         }
 
         write_in_buffer(&data->write_buffer, msg, "Can't write msg from handling cmd");

@@ -30,6 +30,8 @@ int main(void)
         setLogLevel(DEBUG);
         unsigned int port = 60711;
         unsigned int monitor_port = 60401;
+
+        init_monitor();
         // TODO: Receive port via args
         user_add("USER1", "12345");
 
@@ -67,7 +69,6 @@ int main(void)
                 goto finally;
         }
 
-
         const struct selector_init conf = {
             .signal = SIGALRM,
             .select_timeout = {
@@ -93,7 +94,6 @@ int main(void)
                 .handle_close = NULL,
         };
 
-
         ss = selector_register(selector, masterSocket, &masterHandler, OP_READ, NULL);
 
         if (ss != SELECTOR_SUCCESS) {
@@ -106,9 +106,8 @@ int main(void)
                 .handle_write = NULL,
                 .handle_close = NULL,
         };
-        
+
         ss = selector_register(selector, monitorSocket, &masterMonitorHandler, OP_READ, NULL);
-        
 
         if (ss != SELECTOR_SUCCESS) {
                 err_msg = "Error registering master monitor handler";

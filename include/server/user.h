@@ -18,12 +18,12 @@ enum user_states {
         USER_NOT_FOUND
 };
 
-
 bool user_is_connected(const char *user);
 unsigned user_get_state(const char *user);
 void user_set_state(const char *user, unsigned state);
 bool user_exists(const char *user);
 bool user_check_pass(const char *user, const char *pass);
 int user_add(const char *user, const char *pass);
+struct user_t *get_user_array(void);
 
 #endif // !USER_H

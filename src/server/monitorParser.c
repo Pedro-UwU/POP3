@@ -117,13 +117,12 @@ int monitor_parse(struct selector_key *key, monitor_parser_t *monitor_parser, st
         monitor_data *data = ((monitor_data *)(key)->data);
         int state = 0;
         size_t aux = 0;
-        uint8_t* to_delete = buffer_read_ptr(buffer, &aux);
+        uint8_t *to_delete = buffer_read_ptr(buffer, &aux);
         while (data->monitor_parser.err_value == MONITOR_NO_ERROR && buffer_can_read(buffer) &&
                monitor_parser->ended != true) {
                 char c = buffer_read(buffer);
-                state = process_char(key, monitor_parser->parser, monitor_parser->state_id,
-                                     c);
-                uint8_t* to_delete2 = buffer_read_ptr(buffer, &aux);
+                state = process_char(key, monitor_parser->parser, monitor_parser->state_id, c);
+                uint8_t *to_delete2 = buffer_read_ptr(buffer, &aux);
                 monitor_parser->state_id = state;
         }
         //log(DEBUG, "Current Pass Parser State %ld", monitor_parser->state_id);

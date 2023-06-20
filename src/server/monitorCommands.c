@@ -59,9 +59,25 @@ void monitor_quit_cmd(monitor_data *data)
         data->closed = true;
 }
 
-void monitor_get_users_cmd(monitor_data *data, buffer *out_buffer) {   
-        if (buffer_can_write(out_buffer) == false) {
-            log(ERROR, "Can't write in output_buffer");
+void monitor_get_users_cmd(struct monitor_collection_data_t *collected_data, monitor_data *data,
+                           char *msg, size_t max_msg_len)
+{
+        size_t wrote = sprintf(msg, "OwO\r\n");
+        for (int i = 0; i < MAX_USERS; i++) {
+                if (collected_data->user_list[i].uname[0] == '\0') {
+                        continue;
+                }
+                char *state_str =
+                        (collected_data->user_list[i].state == USER_ONLINE)  ? "ONLINE" :
+                        (collected_data->user_list[i].state == USER_LOGGING) ? "LOGGING_IN" :
+                                                                               "OFFLINE";
+                char aux_buffer[64] = { 0 };
+                size_t line_len = sprintf(aux_buffer, "%s %s\r\n",
+                                          collected_data->user_list[i].uname, state_str);
+                if (line_len > (max_msg_len - 2 - wrote)) {
+                        break; // Cannot write a msg larger than max_msg_len;
+                }
+                strcat(msg, aux_buffer);
         }
+        strcat(msg, "\r\n");
 }
-

@@ -3,6 +3,7 @@
 #include <server/stm.h>
 #include <server/buffer.h>
 #include <server/parsers/monitorParser.h>
+#include <server/user.h>
 #include <monitordef.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -19,6 +20,13 @@ typedef struct monitor_data {
         struct buffer read_buffer;
         monitor_parser_t monitor_parser;
 } monitor_data;
+
+struct monitor_collection_data_t {
+        unsigned long sent_bytes;
+        unsigned long curr_connections;
+        unsigned long total_connections;
+        user_t *user_list;
+};
 
 void init_monitor(void);
 void monitor_add_sent_bytes(unsigned long bytes);
