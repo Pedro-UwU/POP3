@@ -94,7 +94,7 @@ void free_trans_parser(void)
         free(transitions_list);
 }
 
-void init_trans_parser(trans_parser_t *parser, const char *user)
+void init_trans_parser(trans_parser_t *parser)
 {
         if (parser == NULL) {
                 log(ERROR, "Trying to initialize NULL trans pass parser");

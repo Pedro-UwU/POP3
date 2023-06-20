@@ -2,6 +2,7 @@
 #define POP3_H
 #include <server/parsers/authParser.h>
 #include <server/parsers/transParser.h>
+#include <server/parsers/updateParser.h>
 #include <server/fileReader.h>
 #include <sys/socket.h>
 #include <stdbool.h>
@@ -20,6 +21,7 @@ typedef struct client_data { // Add more items as we need them
         union { // Parsers
                 auth_parser_t auth_parser;
                 trans_parser_t trans_parser;
+                update_parser_t update_parser;
         } parser;
 
         struct sockaddr_storage client_address;
@@ -55,7 +57,7 @@ enum pop3_states {
         GREETING_WRITE = 0,
         AUTH,
         TRANSACTION,
-        //AUTH_WRITE,
+        UPDATE,
         /* ... */
         DONE,
         ERROR_POP3

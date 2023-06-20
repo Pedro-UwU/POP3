@@ -24,10 +24,13 @@
 #define MAILDIR_NEW "new"
 #define MAILDIR_TMP "tmp"
 
-inline static void set_path_folder(user_maildir_t *md, char *folder);
+inline static void set_path_folder_md(user_maildir_t *md, char *folder);
+inline static void set_path_folder(char *path, unsigned len, char *folder);
 static void new_mail(maildir_mail_t *mail, const char *fname, const char *dir);
 static int create_dir(char *path);
 static void rand_str(char *buf, size_t size);
+static char *append_flags(char *flags, char *filename, unsigned *len);
+static char *move_and_set_flags(bool *success, maildir_mail_t *mail, char *flags);
 
 int maildir_open(user_maildir_t *maildir, const char *username)
 {
@@ -96,15 +99,15 @@ void maildir_build(user_maildir_t *maildir)
         }
 
         // user/Maildir/cur/
-        set_path_folder(maildir, MAILDIR_CUR);
+        set_path_folder_md(maildir, MAILDIR_CUR);
         create_dir(maildir->path);
 
         // user/Maildir/new/
-        set_path_folder(maildir, MAILDIR_NEW);
+        set_path_folder_md(maildir, MAILDIR_NEW);
         create_dir(maildir->path);
 
         // user/Maildir/tmp/
-        set_path_folder(maildir, MAILDIR_TMP);
+        set_path_folder_md(maildir, MAILDIR_TMP);
         create_dir(maildir->path);
 }
 
@@ -165,7 +168,7 @@ maildir_mails_t *maildir_list_new(user_maildir_t *maildir)
         unsigned nfiles = 0;
 
         // user/Maildir/new/
-        set_path_folder(maildir, MAILDIR_NEW);
+        set_path_folder_md(maildir, MAILDIR_NEW);
 
         d = opendir(maildir->path);
         if (d == NULL)
@@ -224,6 +227,21 @@ void maildir_set_read(maildir_mail_t *mail, bool r)
         mail->read = r;
 }
 
+bool maildir_move_as_read(maildir_mail_t *mail)
+{
+        if (mail == NULL) {
+                log(ERROR, "NULL mail");
+                return false;
+        }
+
+        bool success = false;
+        char *np = move_and_set_flags(&success, mail, "S");
+        if (np != NULL)
+                free(np);
+
+        return success;
+}
+
 bool maildir_is_del(maildir_mail_t *mail)
 {
         if (mail == NULL) {
@@ -256,9 +274,36 @@ void maildir_set_del(maildir_mails_t *mails, unsigned n, bool d)
         m->del = d;
 }
 
-inline static void set_path_folder(user_maildir_t *md, char *folder)
+bool maildir_del_permanentely(maildir_mail_t *mail)
+{
+        if (mail == NULL) {
+                log(ERROR, "NULL mail");
+                return false;
+        }
+
+        char *np = NULL;
+        bool success = false;
+
+        // To comply with Maildir, it should be flagged as Trashed (T) first
+        if (maildir_is_read(mail) == true)
+                np = move_and_set_flags(&success, mail, "ST");
+        else
+                np = move_and_set_flags(&success, mail, "T");
+
+        remove(np);
+        free(np);
+
+        return success;
+}
+
+inline static void set_path_folder_md(user_maildir_t *md, char *folder)
 {
         strcpy(&md->path[md->path_len], folder);
+}
+
+inline static void set_path_folder(char *path, unsigned len, char *folder)
+{
+        memcpy(&path[len], folder, strlen(folder));
 }
 
 static void new_mail(maildir_mail_t *mail, const char *fname, const char *dir)
@@ -279,7 +324,7 @@ static void new_mail(maildir_mail_t *mail, const char *fname, const char *dir)
         sprintf(buf, "%s/%s", dir, fname);
 
         mail->path = buf;
-        mail->plen = plen;
+        mail->plen = plen - 1; // - '\0'
 
         if (stat(mail->path, &st)) {
                 log(ERROR, "Could not find mail: %s", mail->path);
@@ -363,4 +408,48 @@ finally:
 
         if (buffer != NULL)
                 free(buffer);
+}
+
+static char *append_flags(char *flags, char *filename, unsigned *len)
+{
+        // ":2," + flags
+        unsigned flags_len = strlen(flags) + 3;
+
+        char *buf = realloc(filename, sizeof(char) * (*len + flags_len + 1));
+        if (buf == NULL) {
+                log(FATAL, "Could not allocate memory");
+                goto finally;
+        }
+
+        sprintf(buf + *len, ":2,%s", flags);
+        *len = strlen(buf);
+
+finally:
+        return buf;
+}
+
+static char *move_and_set_flags(bool *success, maildir_mail_t *mail, char *flags)
+{
+        unsigned np_len = mail->plen;
+        char *new_path = strdup(mail->path);
+        if (new_path == NULL) {
+                log(FATAL, "Could not allocate memory");
+                *success = false;
+                return NULL;
+        }
+
+        // 4 = "new" + /
+        set_path_folder(new_path, mail->plen - mail->flen - 4, MAILDIR_CUR);
+
+        char *with_flags = append_flags(flags, new_path, &np_len);
+        if (with_flags == NULL) {
+                free(new_path);
+                *success = false;
+                return NULL;
+        }
+
+        rename(mail->path, with_flags);
+
+        *success = true;
+        return with_flags;
 }

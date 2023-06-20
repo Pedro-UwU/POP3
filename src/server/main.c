@@ -1,14 +1,15 @@
-#include "server/parsers/transParser.h"
-#include <server/parsers/authParser.h>
 #include <string.h>
 #include <unistd.h>
 #include <signal.h>
 #include <errno.h>
 #include <netinet/in.h>
+#include <server/pop3.h>
 #include <server/serverUtils.h>
 #include <server/selector.h>
-#include <server/pop3.h>
 #include <server/user.h>
+#include <server/parsers/authParser.h>
+#include <server/parsers/transParser.h>
+#include <server/parsers/updateParser.h>
 #include <utils/logger.h>
 
 int serverRunning = 1;
@@ -84,6 +85,7 @@ int main(void)
 
         conf_auth_parser();
         conf_trans_parser();
+        conf_update_parser();
 
         while (serverRunning) {
                 err_msg = NULL;
@@ -95,8 +97,8 @@ int main(void)
         }
 
         int ret = 0;
-finally:
 
+finally:
         if (ss != SELECTOR_SUCCESS) {
                 log(ERROR, "%s: %s", (err_msg == NULL) ? "" : err_msg,
                     ss == SELECTOR_IO ? strerror(errno) : selector_error(ss));
@@ -115,8 +117,10 @@ finally:
         }
 
         selector_close();
+
         free_auth_parser();
         free_trans_parser();
+        free_update_parser();
 
         return ret;
 }

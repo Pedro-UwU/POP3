@@ -10,6 +10,7 @@
 #include <server/selector.h>
 #include <server/auth.h>
 #include <server/transaction.h>
+#include <server/update.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -53,6 +54,12 @@ const struct state_definition client_states[] = { {
                                                           .on_arrival = init_trans,
                                                           .on_read_ready = trans_read,
                                                           .on_write_ready = trans_process,
+                                                  },
+                                                  {
+                                                          .state = UPDATE,
+                                                          .on_arrival = init_update,
+                                                          .on_read_ready = NULL,
+                                                          .on_write_ready = update_process,
                                                   },
                                                   {
                                                           .state = DONE,

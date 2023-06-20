@@ -50,8 +50,10 @@ void maildir_populate(user_maildir_t *maildir, unsigned n_mails);
 
 bool maildir_is_read(maildir_mail_t *mail);
 void maildir_set_read(maildir_mail_t *mail, bool r);
+bool maildir_move_as_read(maildir_mail_t *mail);
 
 bool maildir_is_del(maildir_mail_t *mail);
 void maildir_set_del(maildir_mails_t *mails, unsigned n, bool d);
+bool maildir_del_permanentely(maildir_mail_t *mail);
 
 #endif // !MAILDIR_H

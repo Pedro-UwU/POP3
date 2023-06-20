@@ -32,7 +32,7 @@ static void cmd_list_all_new(struct selector_key *key);
 void init_trans(const unsigned int state, struct selector_key *key)
 {
         client_data *data = GET_DATA(key);
-        init_trans_parser(&data->parser.trans_parser, (const char *)data->user);
+        init_trans_parser(&data->parser.trans_parser);
 }
 
 unsigned trans_read(struct selector_key *key)
@@ -123,7 +123,7 @@ unsigned trans_process(struct selector_key *key)
 
 finally:
         if (data->next_state == TRANSACTION)
-                init_trans_parser(parser, (const char *)data->user);
+                init_trans_parser(parser);
 
         return data->next_state;
 }
@@ -178,7 +178,7 @@ static unsigned write_terminator(struct selector_key *key)
                 return ERROR_POP3;
         }
 
-        strncpy((char *)bytes, TERMINATOR, TERMINATOR_LEN);
+        strncpy((char *)bytes, TERMINATOR, 1 + TERMINATOR_LEN);
         buffer_write_adv(output_buffer, TERMINATOR_LEN);
 
         return TRANSACTION;
@@ -220,6 +220,8 @@ static void handle_request(struct selector_key *key, char msg[MAX_RSP_LEN])
 
         log(DEBUG, "[TRANSACTION] CMD: %s | ARGS: %s", cmd, data->parser.trans_parser.arg);
 
+        data->next_state = TRANSACTION;
+
         if (strcmp(cmd, "STAT") == 0) {
                 cmd_stat(data, msg);
         } else if (strcmp(cmd, "LIST") == 0) {
@@ -232,13 +234,12 @@ static void handle_request(struct selector_key *key, char msg[MAX_RSP_LEN])
                 cmd_rset(data, msg);
         } else if (strcmp(cmd, "NOOP") == 0) {
                 sprintf(msg, "+OK\r\n");
+        } else if (strcmp(cmd, "QUIT") == 0) {
+                data->next_state = UPDATE;
         } else {
                 sprintf(msg, "-ERR invalid command\r\n");
         }
-
-        data->next_state = TRANSACTION;
 }
-
 static void cmd_stat(client_data *data, char msg[MAX_RSP_LEN])
 {
         maildir_mails_t *mails = NULL;
@@ -324,7 +325,7 @@ static void cmd_retr(struct selector_key *key, char msg[MAX_RSP_LEN])
         }
 
         // Mark as read
-        maildir_set_read(&mails->mails[n - 1], false);
+        maildir_set_read(&mails->mails[n - 1], true);
         sprintf(msg, "+OK %d octects\r\n", mails->mails[n - 1].size);
 
         data->send.file = true;
