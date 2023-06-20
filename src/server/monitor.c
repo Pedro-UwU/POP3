@@ -107,7 +107,9 @@ static void handleMonitorWrite(struct selector_key *key)
                 data->is_sending = true;
                 log(DEBUG, "About to reset monitor parser");
                 init_monitor_parser(parser);
+                return;
         }
+        selector_set_interest_key(key, OP_READ);
 }
 
 
