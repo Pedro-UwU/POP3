@@ -13,7 +13,7 @@ This markdown file presents a simple and text-based monitor protocol for POP3 se
 - Arguments can be upper and lowercase
 - All responses begin with "OwO ", in case of success or "UwU ", in case of an error
 - Authentication is required. Who sets up the monitoring server is responsible for setting up at least one user. Without authentication only `LOGIN` and `QUIT` commands are available.
-- Multiline response have the number of lines that the response have in the first line right after the success indicator.
+- Multiline response end with a empty line. 
 ## Commands
 - QUIT
 	- Closes the connection.
