@@ -1,5 +1,8 @@
+#include "server/monitor.h"
+#include "server/parsers/authParser.h"
+#include "server/parsers/monitorParser.h"
 #include "server/parsers/transParser.h"
-#include <server/parsers/authParser.h>
+#include <server/pop3.h>
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
@@ -8,7 +11,6 @@
 #include <netinet/in.h>
 #include <server/serverUtils.h>
 #include <server/selector.h>
-#include <server/pop3.h>
 #include <server/user.h>
 #include <utils/logger.h>
 
@@ -37,7 +39,6 @@ int main(void)
         selector_status ss = SELECTOR_SUCCESS;
         fd_selector selector = NULL;
 
-
         // Create master POP3 socket
         int masterSocket = createTCPSocketServer(port);
         if (masterSocket < 0) {
@@ -48,8 +49,8 @@ int main(void)
         // Create master Monitor Socket
         int monitorSocket = createTCPSocketServer(monitor_port);
         if (monitorSocket < 0) {
-            log(FATAL, "Couldn't create monitor socket");
-            goto finally;
+                log(FATAL, "Couldn't create monitor socket");
+                goto finally;
         }
 
         // Register signal handlers
@@ -60,6 +61,12 @@ int main(void)
                 err_msg = "getting server socket flags";
                 goto finally;
         }
+
+        if (selector_fd_set_nio(monitorSocket) == -1) {
+                err_msg = "getting server socket flags";
+                goto finally;
+        }
+
 
         const struct selector_init conf = {
             .signal = SIGALRM,
@@ -86,6 +93,7 @@ int main(void)
                 .handle_close = NULL,
         };
 
+
         ss = selector_register(selector, masterSocket, &masterHandler, OP_READ, NULL);
 
         if (ss != SELECTOR_SUCCESS) {
@@ -93,9 +101,23 @@ int main(void)
                 goto finally;
         }
 
+        const struct fd_handler masterMonitorHandler = {
+                .handle_read = acceptMonitorConnection,
+                .handle_write = NULL,
+                .handle_close = NULL,
+        };
+        
+        ss = selector_register(selector, monitorSocket, &masterMonitorHandler, OP_READ, NULL);
+        
+
+        if (ss != SELECTOR_SUCCESS) {
+                err_msg = "Error registering master monitor handler";
+                goto finally;
+        }
+
         conf_auth_parser();
         conf_trans_parser();
-
+        conf_monitor_parser();
         while (serverRunning) {
                 err_msg = NULL;
                 ss = selector_select(selector);
@@ -131,6 +153,7 @@ finally:
         selector_close();
         free_auth_parser();
         free_trans_parser();
+        free_monitor_parser();
 
         return ret;
 }

@@ -2,6 +2,7 @@
  * buffer.c - buffer con acceso directo (útil para I/O) que mantiene
  *            mantiene puntero de lectura y de escritura.
  */
+#include "utils/logger.h"
 #include <string.h>
 #include <stdint.h>
 #include <assert.h>
@@ -88,12 +89,17 @@ inline void buffer_write(buffer *b, uint8_t c)
 
 void buffer_compact(buffer *b)
 {
+        log(DEBUG, "Compacting");
         if (b->data == b->read) {
+                log(DEBUG, "1");
                 // nada por hacer
         } else if (b->read == b->write) {
+                log(DEBUG, "2");
                 b->read = b->data;
                 b->write = b->data;
+                log(DEBUG, "b->read: %p - b->write: %p - b->data: %p", b->read, b->write, b->data);
         } else {
+                log(DEBUG, "3");
                 const size_t n = b->write - b->read;
                 memmove(b->data, b->read, n);
                 b->read = b->data;

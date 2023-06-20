@@ -1,5 +1,4 @@
-#include "monitordef.h"
-#include "pop3def.h"
+#include <monitordef.h>
 #include <server/buffer.h>
 #include <ctype.h>
 #include <server/parser.h>
@@ -108,22 +107,27 @@ void init_monitor_parser(monitor_parser_t *parser)
         parser->total_cmd = 0;
         parser->ended = false;
         parser->quit = false;
-        parser->err_value = NO_ERROR;
+        parser->err_value = MONITOR_NO_ERROR;
         memset(parser->cmd, 0, MONITOR_MAX_CMD_LEN);
         memset(parser->arg, 0, MONITOR_MAX_ARG_LEN);
 }
 
 int monitor_parse(struct selector_key *key, monitor_parser_t *monitor_parser, struct buffer *buffer)
 {
-        monitor_data *data = ((monitor_data*)(key)->data);
+        monitor_data *data = ((monitor_data *)(key)->data);
         int state = 0;
-        while (data->monitor_parser.err_value == NO_ERROR && buffer_can_read(buffer) &&
+        size_t aux = 0;
+        uint8_t* to_delete = buffer_read_ptr(buffer, &aux);
+        while (data->monitor_parser.err_value == MONITOR_NO_ERROR && buffer_can_read(buffer) &&
                monitor_parser->ended != true) {
+                char c = buffer_read(buffer);
                 state = process_char(key, monitor_parser->parser, monitor_parser->state_id,
-                                     buffer_read(buffer));
+                                     c);
+                uint8_t* to_delete2 = buffer_read_ptr(buffer, &aux);
+                log(DEBUG, "Read %c (%d) and new state is %d. Pointer diff = %d - read_ptr = %p - write_ptr = %p", c, (int)c, state, (int)(to_delete2 - to_delete), buffer->read, buffer->write);
                 monitor_parser->state_id = state;
         }
-        log(DEBUG, "Current Pass Parser State %ld", monitor_parser->state_id);
+        //log(DEBUG, "Current Pass Parser State %ld", monitor_parser->state_id);
         return state;
 }
 
@@ -132,7 +136,7 @@ static void save_cmd(struct selector_key *key, uint8_t c)
         if (!isalpha(c)) {
                 return;
         }
-        monitor_data *data = ((monitor_data*)(key)->data);
+        monitor_data *data = ((monitor_data *)(key)->data);
         monitor_parser_t *parser = &data->monitor_parser;
         if (parser->total_cmd >= MONITOR_MAX_CMD_LEN) {
                 return; // Invalid command. No need to go to error
@@ -147,10 +151,10 @@ static void save_arg(struct selector_key *key, uint8_t c)
         if (!isprint(c)) {
                 return;
         }
-        monitor_data *data = ((monitor_data*)(key)->data);
+        monitor_data *data = ((monitor_data *)(key)->data);
         monitor_parser_t *parser = &data->monitor_parser;
         if (parser->total_arg >= MONITOR_MAX_ARG_LEN) {
-                parser->err_value = INVALID_ARG;
+                parser->err_value = MONITOR_INVALID_ARG;
                 return; // Invalid arg. No need to go to error
         }
         parser->arg[parser->total_arg] = c;
@@ -160,15 +164,15 @@ static void save_arg(struct selector_key *key, uint8_t c)
 
 static void final_arrival(struct selector_key *key, uint8_t c)
 {
-        monitor_data *data = ((monitor_data*)(key)->data);
+        monitor_data *data = ((monitor_data *)(key)->data);
         monitor_parser_t *parser = &data->monitor_parser;
         parser->ended = true;
 }
 
 static void error_arrival(struct selector_key *key, uint8_t c)
 {
-        monitor_data *data = ((monitor_data*)(key)->data);
+        monitor_data *data = ((monitor_data *)(key)->data);
         monitor_parser_t *parser = &data->monitor_parser;
-        parser->err_value = INVALID_CHAR;
+        parser->err_value = MONITOR_INVALID_CHAR;
         parser->ended = true;
 }

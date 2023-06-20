@@ -1,5 +1,5 @@
-#ifndef AUTH_PARSER_H
-#define AUTH_PARSER_H
+#ifndef MONITOR_PARSER_H
+#define MONITOR_PARSER_H
 #include <server/buffer.h>
 #include <server/parser.h>
 #include <server/selector.h>
@@ -22,6 +22,7 @@ typedef struct {
 void conf_monitor_parser(void);
 void free_monitor_parser(void);
 void init_monitor_parser(monitor_parser_t *parser);
-int monitor_parse(struct selector_key *key, monitor_parser_t *monitor_parser_t, struct buffer *buffer);
+int monitor_parse(struct selector_key *key, monitor_parser_t *monitor_parser_t,
+                  struct buffer *buffer);
 
 #endif // !AUTH_PARSER_H
