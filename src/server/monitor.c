@@ -273,10 +273,15 @@ static bool handle_cmd(struct selector_key *key)
         char *cmd = parser->cmd;
         char *msg = NULL;
         if (strcmp(cmd, "LOGIN") == 0) {
-                login_cmd(data);
+                monitor_login_cmd(data);
                 if (data->err_code == MONITOR_NO_ERROR) {
                     msg = "OwO Successfully logged\r\n";
                 }
+        } else if (strcmp(cmd, "QUIT")) {
+                return false;
+        } else if (strcmp(cmd, "GET_USERS")) {
+                char aux_buffer[MONITOR_BUFFER_SIZE];
+                monitor_get_users_cmd(data, aux_buffer);
         }
         /* else if to all the commands */
         else {

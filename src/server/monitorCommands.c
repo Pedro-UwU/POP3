@@ -1,9 +1,13 @@
-#include "monitordef.h"
+#include <monitordef.h>
+#include <server/buffer.h>
+#include <server/user.h>
 #include <server/monitor.h>
 #include <server/monitorCommands.h>
+#include <utils/logger.h>
 #include <stdbool.h>
 #include <string.h>
 #include <stdio.h>
+#include <pop3def.h>
 
 static bool check_credentials(const char *user, const char *pass)
 {
@@ -31,7 +35,7 @@ static bool extract_credentials(const char *args, char *username, char *password
 
 /* Commands ----------------------------------------------------------------------------------------------------------------*/
 
-void login_cmd(monitor_data *data)
+void monitor_login_cmd(monitor_data *data)
 {
         char *args = data->monitor_parser.arg;
         char username[40] = { 0 };
@@ -44,6 +48,21 @@ void login_cmd(monitor_data *data)
         }
         if (check_credentials(username, password) == true) {
                 data->logged = true;
+                data->err_code = MONITOR_NO_ERROR;
+                return;
         }
         data->err_code = MONITOR_WRONG_LOGIN;
 }
+
+void monitor_quit_cmd(monitor_data *data)
+{
+        data->closed = true;
+}
+
+void monitor_get_users_cmd(monitor_data *data, buffer *out_buffer) {   
+        if (buffer_can_write(out_buffer) == false) {
+            log(ERROR, "Can't write in output_buffer");
+        }
+        for (int i = 0; i < MAX_USER
+}
+
