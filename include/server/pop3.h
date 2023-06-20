@@ -24,8 +24,14 @@ typedef struct client_data { // Add more items as we need them
 
         struct sockaddr_storage client_address;
         bool closed;
-        bool is_sending;
-        bool sending_file;
+
+        struct {
+                bool finished; // Everything sent
+                bool file; // Sending a file
+                bool multiline; // Should send terminator
+                void (*f)(struct selector_key *key); // Get more data to send
+        } send;
+
         unsigned err_code;
         uint8_t read_buffer_data[BUFFER_SIZE];
         uint8_t write_buffer_data[BUFFER_SIZE];
@@ -34,7 +40,14 @@ typedef struct client_data { // Add more items as we need them
         int next_state;
         struct buffer write_buffer_client;
         struct buffer read_buffer_client;
+
+        // RETR command
         struct file_reader_data fr_data;
+
+        // LIST command
+        unsigned n_listed;
+
+        // User Maildir
         user_maildir_t maildir;
 } client_data;
 

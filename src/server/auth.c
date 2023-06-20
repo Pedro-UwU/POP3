@@ -28,7 +28,7 @@ void init_auth(const unsigned state, struct selector_key *key)
 unsigned auth_read(struct selector_key *key)
 {
         client_data *data = GET_DATA(key);
-        if (data->is_sending == true) {
+        if (data->send.finished == false) {
                 log(ERROR, "WTF Shouldn't be in READ in auth with socket %d", key->fd);
                 selector_set_interest_key(key, OP_WRITE);
                 return AUTH;
@@ -68,13 +68,13 @@ unsigned auth_process(struct selector_key *key)
         client_data *data = GET_DATA(key);
         buffer *output_buffer = &data->write_buffer_client;
         buffer *input_buffer = &data->read_buffer_client;
-        if (data->is_sending == true) {
+        if (data->send.finished == false) {
                 bool something_to_read = buffer_can_read(output_buffer);
                 if (something_to_read == true) {
                         log(ERROR,
                             "WTF, is_sending = true and empty buffer in auth_process with socket %d",
                             key->fd);
-                        data->is_sending = false;
+                        data->send.finished = true;
                         return AUTH;
                 }
                 size_t read_limit = 0;
@@ -90,7 +90,7 @@ unsigned auth_process(struct selector_key *key)
 
                 if (buffer_can_read(output_buffer) == false) { // Everything was sent
                         // Here I should check if the buffer needs to be refilled. In the Auth state this cannot happen, but in the Transition state, It may
-                        data->is_sending = false;
+                        data->send.finished = true;
                         return data->next_state;
                 }
                 return AUTH; // There's that needs to be send
@@ -100,7 +100,7 @@ unsigned auth_process(struct selector_key *key)
                 log(ERROR,
                     "WTF Should be here if there's data to send in auth_process in socket %d",
                     key->fd);
-                data->is_sending = true;
+                data->send.finished = false;
                 return AUTH;
         }
         auth_parser_t *auth_parser = &data->parser.auth_parser;
@@ -122,7 +122,7 @@ unsigned auth_process(struct selector_key *key)
 
         buffer_read_adv(output_buffer, sent_bytes);
         if (buffer_can_read(output_buffer) == true) { // Things left to send
-                data->is_sending = true;
+                data->send.finished = false;
                 return AUTH;
         }
         if (buffer_can_read(input_buffer) == true) { // No more things to read. (PIPELINING)

@@ -12,17 +12,22 @@
 #include <utils/logger.h>
 #include <utils/maildir.h> // maildir_*
 
+#define MIN(x, y) ((x) > (y) ? (y) : (x))
+
 static unsigned send_data(struct selector_key *key);
+static unsigned write_terminator(struct selector_key *key);
+static unsigned send_terminator(struct selector_key *key);
 static void handle_request(struct selector_key *key, char msg[MAX_RSP_LEN]);
 
 static void cmd_stat(client_data *data, char msg[MAX_RSP_LEN]);
-static void cmd_list(client_data *data, char msg[MAX_RSP_LEN]);
+static void cmd_list(struct selector_key *data, char msg[MAX_RSP_LEN]);
 static void cmd_retr(struct selector_key *key, char msg[MAX_RSP_LEN]);
 static void cmd_dele(client_data *data, char msg[MAX_RSP_LEN]);
 static void cmd_rset(client_data *data, char msg[MAX_RSP_LEN]);
 static int get_new_mails(client_data *data, maildir_mails_t **mails, size_t *size,
                          size_t *del_size);
 static char *get_next_arg(client_data *data, char buf[MAX_ARG_LEN]);
+static void cmd_list_all_new(struct selector_key *key);
 
 void init_trans(const unsigned int state, struct selector_key *key)
 {
@@ -33,7 +38,7 @@ void init_trans(const unsigned int state, struct selector_key *key)
 unsigned trans_read(struct selector_key *key)
 {
         client_data *data = GET_DATA(key);
-        if (data->is_sending == true) {
+        if (data->send.finished == false) {
                 log(ERROR, "WTF Shouldn't be in READ in transaction with socket %d", key->fd);
                 selector_set_interest_key(key, OP_WRITE);
                 return TRANSACTION;
@@ -75,8 +80,10 @@ unsigned trans_process(struct selector_key *key)
         buffer *output_buffer = &data->write_buffer_client;
         buffer *input_buffer = &data->read_buffer_client;
 
-        if (data->is_sending == true)
+        if (data->send.finished == false)
                 return send_data(key);
+        else if (data->send.multiline == true)
+                return send_terminator(key);
 
         if (buffer_can_read(input_buffer) == false) {
                 selector_set_interest_key(key, OP_READ);
@@ -103,11 +110,12 @@ unsigned trans_process(struct selector_key *key)
 
         buffer_read_adv(output_buffer, sent_bytes);
         if (buffer_can_read(output_buffer) == true) { // Things left to send
-                data->is_sending = true;
+                data->send.finished = false;
                 goto finally;
         }
 
-        if (buffer_can_read(input_buffer) == true) { // No more things to read. (PIPELINING)
+        if (data->send.finished == false ||
+            buffer_can_read(input_buffer) == true) { // No more things to read. (PIPELINING)
                 selector_set_interest_key(key, OP_WRITE);
         } else {
                 selector_set_interest_key(key, OP_READ);
@@ -129,7 +137,7 @@ static unsigned send_data(struct selector_key *key)
 
         size_t bytes_to_send = 0;
         uint8_t *bytes = buffer_read_ptr(output_buffer, &bytes_to_send);
-        size_t can_send = bytes_to_send > MAX_BYTES_SEND ? MAX_BYTES_SEND : bytes_to_send;
+        size_t can_send = MIN(bytes_to_send, MAX_BYTES_SEND);
 
         ssize_t sent = send(key->fd, bytes, can_send, 0);
         if (sent < 0) {
@@ -139,11 +147,14 @@ static unsigned send_data(struct selector_key *key)
 
         buffer_read_adv(output_buffer, sent);
         if ((size_t)sent == bytes_to_send) { // Everything was sent
-                if (data->sending_file == true) {
-                        // SET INTEREST OF FILE SELECTOR TO READ AND SELF TO NOOP
-                        load_more_bytes(key);
+                if (data->send.f != NULL) {
+                        data->send.f(key);
+                } else if (data->send.multiline == true) {
+                        data->send.finished = true;
+
+                        return write_terminator(key);
                 } else {
-                        data->is_sending = false;
+                        data->send.finished = true;
                         if (buffer_can_read(input_buffer) == false)
                                 selector_set_interest_key(key, OP_READ);
 
@@ -152,6 +163,54 @@ static unsigned send_data(struct selector_key *key)
         }
 
         return TRANSACTION;
+}
+
+static unsigned write_terminator(struct selector_key *key)
+{
+        client_data *data = GET_DATA(key);
+
+        buffer *output_buffer = &data->write_buffer_client;
+
+        size_t bytes_to_send = 0;
+        uint8_t *bytes = buffer_write_ptr(output_buffer, &bytes_to_send);
+        if (bytes_to_send < TERMINATOR_LEN) {
+                log(ERROR, "Could not write multiline terminator");
+                return ERROR_POP3;
+        }
+
+        strncpy((char *)bytes, TERMINATOR, TERMINATOR_LEN);
+        buffer_write_adv(output_buffer, TERMINATOR_LEN);
+
+        return TRANSACTION;
+}
+
+static unsigned send_terminator(struct selector_key *key)
+{
+        client_data *data = GET_DATA(key);
+
+        buffer *output_buffer = &data->write_buffer_client;
+        buffer *input_buffer = &data->read_buffer_client;
+
+        size_t bytes_to_send = 0;
+        uint8_t *bytes = buffer_read_ptr(output_buffer, &bytes_to_send);
+        size_t can_send = MIN(bytes_to_send, MAX_BYTES_SEND);
+
+        ssize_t sent = send(key->fd, bytes, can_send, 0);
+        if (sent < 0) {
+                data->err_code = UNKNOWN_ERROR;
+                return ERROR_POP3;
+        }
+
+        buffer_read_adv(output_buffer, sent);
+
+        data->send.finished = true;
+        data->send.multiline = false;
+        data->send.file = false;
+        data->send.f = NULL;
+        if (buffer_can_read(input_buffer) == false)
+                selector_set_interest_key(key, OP_READ);
+
+        return data->next_state;
 }
 
 static void handle_request(struct selector_key *key, char msg[MAX_RSP_LEN])
@@ -164,7 +223,7 @@ static void handle_request(struct selector_key *key, char msg[MAX_RSP_LEN])
         if (strcmp(cmd, "STAT") == 0) {
                 cmd_stat(data, msg);
         } else if (strcmp(cmd, "LIST") == 0) {
-                cmd_list(data, msg);
+                cmd_list(key, msg);
         } else if (strcmp(cmd, "RETR") == 0) {
                 cmd_retr(key, msg);
         } else if (strcmp(cmd, "DELE") == 0) {
@@ -194,8 +253,10 @@ static void cmd_stat(client_data *data, char msg[MAX_RSP_LEN])
         sprintf(msg, "+OK %d %ld\r\n", mails->len - mails->ndel, size - del_size);
 }
 
-static void cmd_list(client_data *data, char msg[MAX_RSP_LEN])
+static void cmd_list(struct selector_key *key, char msg[MAX_RSP_LEN])
 {
+        client_data *data = GET_DATA(key);
+
         maildir_mails_t *mails = NULL;
         size_t size = 0;
         size_t del_size = 0;
@@ -209,7 +270,10 @@ static void cmd_list(client_data *data, char msg[MAX_RSP_LEN])
         if (data->parser.trans_parser.total_arg == 0) {
                 sprintf(msg, "+OK %d new messages (%ld octects)\r\n", mails->len - mails->ndel,
                         size - del_size);
-                // TODO list each mail info
+
+                data->send.finished = false;
+                data->send.multiline = true;
+                data->send.f = cmd_list_all_new;
                 return;
         }
 
@@ -263,19 +327,19 @@ static void cmd_retr(struct selector_key *key, char msg[MAX_RSP_LEN])
         maildir_set_read(&mails->mails[n - 1], false);
         sprintf(msg, "+OK %d octects\r\n", mails->mails[n - 1].size);
 
-        data->sending_file = true;
+        data->send.file = true;
+        data->send.multiline = true;
 
         strcpy(data->fr_data.file_path, mails->mails[n - 1].path);
 
-        data->fr_data.is_reading_file = &data->sending_file;
+        data->send.f = load_more_bytes;
+        data->fr_data.file_reader = &data->send.f;
         data->fr_data.output_buffer = &data->write_buffer_client;
         data->fr_data.client_fd = key->fd;
-        data->is_sending = true;
+        data->send.finished = false;
 
+        // Changes selector interest key to OP_NOOP
         init_file_reader(key, &(data->fr_data));
-
-        log(DEBUG, "Changing client to NOOP");
-        selector_set_interest_key(key, OP_NOOP);
 }
 
 static void cmd_dele(client_data *data, char msg[MAX_RSP_LEN])
@@ -389,4 +453,49 @@ static char *get_next_arg(client_data *data, char buf[MAX_ARG_LEN])
         data->parser.trans_parser.arg_read++;
 
         return buf;
+}
+
+static void cmd_list_all_new(struct selector_key *key)
+{
+        client_data *data = GET_DATA(key);
+
+        buffer *output_buffer = &data->write_buffer_client;
+
+        char buf[MAX_RSP_LEN];
+        maildir_mails_t *mails = NULL;
+        size_t size = 0;
+        if (get_new_mails(data, &mails, &size, NULL) != 0) {
+                log(ERROR, "NULL mails");
+                return;
+        }
+
+        size_t nbwrite = 0;
+        uint8_t *bytes = buffer_write_ptr(output_buffer, &nbwrite);
+
+        while (data->n_listed < mails->len && mails->mails[data->n_listed].del == true) {
+                data->n_listed++;
+        }
+        if (data->n_listed == mails->len)
+                goto finally;
+
+        sprintf(buf, "%d %d\r\n", data->n_listed + 1, mails->mails[data->n_listed].size);
+        size_t buf_len = strlen(buf);
+
+        if (nbwrite < buf_len) {
+                // Maybe next time
+                return;
+        }
+
+        data->n_listed++;
+
+        strncpy((char *)bytes, buf, nbwrite);
+        buffer_write_adv(output_buffer, MIN(buf_len, nbwrite));
+
+        selector_set_interest_key(key, OP_WRITE);
+
+finally:
+        if (data->n_listed == mails->len) {
+                data->send.f = NULL;
+                data->n_listed = 0;
+        }
 }

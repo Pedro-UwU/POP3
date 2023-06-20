@@ -9,7 +9,7 @@
 
 typedef struct file_reader_data {
         buffer *output_buffer;
-        bool *is_reading_file;
+        void (**file_reader)(struct selector_key *key);
         char file_path[MAX_FILE_PATH];
         int fd;
         int client_fd;

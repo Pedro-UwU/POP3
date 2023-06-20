@@ -22,7 +22,6 @@ static void handle_file_reader(struct selector_key *key)
 {
         file_reader_data *fr_data = ((file_reader_data *)key->data);
         buffer *output_buffer = fr_data->output_buffer;
-        bool *is_reading_file = fr_data->is_reading_file;
         if (buffer_can_write(output_buffer) == false) {
                 log(DEBUG, "File reader trying to write in full buffer of socket %d",
                     fr_data->client_fd);
@@ -32,7 +31,7 @@ static void handle_file_reader(struct selector_key *key)
 
         size_t can_read_bytes = 0;
         uint8_t *write_ptr = buffer_write_ptr(output_buffer, &can_read_bytes);
-        size_t read_bytes = read(fr_data->fd, write_ptr, can_read_bytes);
+        ssize_t read_bytes = read(fr_data->fd, write_ptr, can_read_bytes);
 
         change_interests(key);
         if (read_bytes < 0) {
@@ -42,7 +41,7 @@ static void handle_file_reader(struct selector_key *key)
         }
         if (read_bytes == 0) { // EOF
                 selector_unregister_fd(key->s, key->fd);
-                *(is_reading_file) = false;
+                *(fr_data->file_reader) = NULL;
                 close(fr_data->fd);
                 return;
         }
@@ -53,9 +52,7 @@ static void handle_file_reader(struct selector_key *key)
 void init_file_reader(struct selector_key *key, file_reader_data *fr_data)
 {
         char aux_buffer[1024] = { 0 };
-        strcpy(aux_buffer, "cat ");
-        strcat(aux_buffer, fr_data->file_path);
-        strcat(aux_buffer, " | sed 's/^\\./\\.\\./g'");
+        sprintf(aux_buffer, "cat \"%s\" | sed '1!s/^\\./\\.\\./g'", fr_data->file_path);
 
         FILE *fp = popen(aux_buffer, "r");
         if (fp == NULL) {
@@ -69,7 +66,7 @@ void init_file_reader(struct selector_key *key, file_reader_data *fr_data)
 
         //TODO should I make the fd not blocking?
         selector_register(key->s, fd, &file_reader_handler, OP_READ, fr_data);
-        log(DEBUG, "Changing client top NOOP");
+        log(DEBUG, "Changing client to NOOP");
         selector_set_interest_key(key, OP_NOOP);
 }
 

@@ -8,6 +8,8 @@
 #define MAX_BYTES_SEND 256
 #define USER_CMD "USER"
 #define QUIT_CMD "QUIT"
+#define TERMINATOR ".\r\n"
+#define TERMINATOR_LEN 3
 
 enum POP3ErrCodes {
         NO_ERROR = 0,
