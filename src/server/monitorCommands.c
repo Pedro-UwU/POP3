@@ -63,6 +63,5 @@ void monitor_get_users_cmd(monitor_data *data, buffer *out_buffer) {
         if (buffer_can_write(out_buffer) == false) {
             log(ERROR, "Can't write in output_buffer");
         }
-        for (int i = 0; i < MAX_USER
 }
 

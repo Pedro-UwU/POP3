@@ -8,6 +8,7 @@
 #include <server/monitorCommands.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <utils/logger.h>
 #include <sys/socket.h>
 #include <string.h>
@@ -229,7 +230,6 @@ static bool continue_sending(struct selector_key *key)
 static bool handle_error(struct selector_key *key)
 {
         monitor_data *data = ((monitor_data *)(key)->data);
-        monitor_parser_t *parser = &data->monitor_parser;
         buffer* output_buffer = &data->write_buffer;
         unsigned err_code = data->err_code;
         if (err_code == MONITOR_NO_ERROR) {
@@ -271,17 +271,20 @@ static bool handle_cmd(struct selector_key *key)
         monitor_data *data = ((monitor_data *)(key)->data);
         monitor_parser_t *parser = &data->monitor_parser;
         char *cmd = parser->cmd;
-        char *msg = NULL;
+        char msg[1024] = {0};
         if (strcmp(cmd, "LOGIN") == 0) {
                 monitor_login_cmd(data);
                 if (data->err_code == MONITOR_NO_ERROR) {
-                    msg = "OwO Successfully logged\r\n";
+                    sprintf(msg, "OwO Successfully logged\r\n");
                 }
-        } else if (strcmp(cmd, "QUIT")) {
+        } else if (strcmp(cmd, "QUIT") == 0) {
                 return false;
-        } else if (strcmp(cmd, "GET_USERS")) {
-                char aux_buffer[MONITOR_BUFFER_SIZE];
-                monitor_get_users_cmd(data, aux_buffer);
+        } else if (strcmp(cmd, "GET_CURR_CONN") == 0) {
+                sprintf(msg, "OwO %ld\r\n", collected_data.curr_connections); 
+        } else if (strcmp(cmd, "GET_TOTAL_CONN") == 0) {
+                sprintf(msg, "OwO %ld\r\n", collected_data.total_connections);
+        } else if (strcmp(cmd, "GET_SENT_BYTES") == 0) {
+                sprintf(msg, "OwO %ld\r\n", collected_data.sent_bytes);
         }
         /* else if to all the commands */
         else {

@@ -132,7 +132,7 @@ int monitor_parse(struct selector_key *key, monitor_parser_t *monitor_parser, st
 
 static void save_cmd(struct selector_key *key, uint8_t c)
 {
-        if (!isalpha(c)) {
+        if (!isprint(c) || c == ' ') {
                 return;
         }
         monitor_data *data = ((monitor_data *)(key)->data);
