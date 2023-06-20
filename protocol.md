@@ -13,6 +13,7 @@ This markdown file presents a simple and text-based monitor protocol for POP3 se
 - Arguments can be upper and lowercase
 - All responses begin with "OwO ", in case of success or "UwU ", in case of an error
 - Authentication is required. Who sets up the monitoring server is responsible for setting up at least one user. Without authentication only `LOGIN` and `QUIT` commands are available.
+- Multiline response have the number of lines that the response have in the first line right after the success indicator.
 ## Commands
 - QUIT
 	- Closes the connection.
@@ -25,6 +26,14 @@ This markdown file presents a simple and text-based monitor protocol for POP3 se
 	- Needed for authentication. 
 - GET_USERS
 	- Returns a list of all the users, one per line. Each line obey the following syntax: `<username> <is_online>` where *is_online* can be ONLINE, LOGGING_IN or OFFLINE
+	```
+	C: GET_USERS
+ 	S: :) 5
+	S: user1 OFFLINE
+ 	S: user2 ONLINE
+ 	S: user3 ONLINE
+ 	S: user4 LOGGING_IN
+ 	```
 - GET_USER \<username>
 	- Returns the existence of a user and it's status. For example:
 	```
