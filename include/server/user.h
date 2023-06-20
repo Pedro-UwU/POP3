@@ -1,13 +1,23 @@
 #ifndef USER_H
 #define USER_H
-
 #include <stdbool.h>
+#include <pop3def.h>
+
+#define MAX_USERS 512
+
+typedef struct user_t {
+        char uname[MAX_ARG_LEN];
+        char pass[MAX_ARG_LEN];
+        unsigned state;
+} user_t;
+
 enum user_states {
         USER_OFFLINE = 0, // Not connected
         USER_LOGGING, // USER command
         USER_ONLINE, // Connected
         USER_NOT_FOUND
 };
+
 
 bool user_is_connected(const char *user);
 unsigned user_get_state(const char *user);
