@@ -226,6 +226,7 @@ static bool handle_error(struct selector_key *key)
         monitor_data *data = ((monitor_data *)(key)->data);
         buffer *output_buffer = &data->write_buffer;
         unsigned err_code = data->err_code;
+        data->err_code = MONITOR_NO_ERROR;
         if (err_code == MONITOR_NO_ERROR) {
                 log(ERROR, "Handling error when error code is NO ERROR monitoring socket %d",
                     key->fd);
@@ -284,6 +285,13 @@ static bool handle_cmd(struct selector_key *key)
                         data->err_code = MONITOR_NOT_USER_LIST;
                 } else {
                         monitor_get_users_cmd(&collected_data, data, msg, 1024);
+                }
+        } else if (strcmp(cmd, "GET_USER") == 0) {
+                if (collected_data.user_list == NULL) {
+                        data->err_code = MONITOR_NOT_USER_LIST;
+                } else {
+                        char* username = parser->arg;
+                        monitor_get_one_user_cmd(&collected_data, data, username, msg, 1024);
                 }
         }
         /* else if to all the commands */

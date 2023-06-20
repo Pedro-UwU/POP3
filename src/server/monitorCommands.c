@@ -81,3 +81,22 @@ void monitor_get_users_cmd(struct monitor_collection_data_t *collected_data, mon
         }
         strcat(msg, "\r\n");
 }
+
+
+void monitor_get_one_user_cmd(struct monitor_collection_data_t *collected_data, monitor_data* data, char* uname, char *msg, size_t max_msg_len) {
+    for (int i = 0; i < MAX_USERS; i++) {
+        if (collected_data->user_list[i].uname[0] == '\0') {
+            continue;
+        }
+        char* aux_uname = collected_data->user_list[i].uname;
+        if (strcmp(uname, aux_uname) == 0) {
+            char *state_str =
+                        (collected_data->user_list[i].state == USER_ONLINE)  ? "ONLINE" :
+                        (collected_data->user_list[i].state == USER_LOGGING) ? "LOGGING_IN" :
+                                                                               "OFFLINE";
+            sprintf(msg, "OwO %s %s\r\n", uname, state_str);
+            return;
+        }
+    }
+    data->err_code = MONITOR_INVALID_USER;
+}
