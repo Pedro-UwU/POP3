@@ -28,7 +28,6 @@ static struct monitor_collection_data_t collected_data = {
 
 
 static bool write_in_buffer(buffer *buff, const char *msg, const char *log_error);
-static void write_server_down_msg(struct selector_key *key);
 static bool continue_sending(struct selector_key *key);
 static bool handle_error(struct selector_key *key);
 static bool handle_finished_cmd(struct selector_key *key);
@@ -185,15 +184,6 @@ void acceptMonitorConnection(struct selector_key *key)
         }
 
         log(INFO, "New client in socket %d has been registered into seletor", new_client_socket);
-        return;
-}
-
-static void write_server_down_msg(struct selector_key *key)
-{
-        static const char *msg = "UwU POP3 Server is offline\r\n\r\n";
-        static const char *log_error = "Cant send server down msg";
-        monitor_data *data = ((monitor_data *)(key)->data);
-        write_in_buffer(&data->write_buffer, msg, log_error);
         return;
 }
 
@@ -364,7 +354,7 @@ static bool handle_cmd(struct selector_key *key)
                 if (collected_data.user_list == NULL) {
                         data->err_code = MONITOR_NOT_USER_LIST;
                 } else {
-                        monitor_get_users_cmd(&collected_data, data, msg, MAX_MSG_LEN);
+                        monitor_get_users_cmd(&collected_data, msg, MAX_MSG_LEN);
                 }
         } else if (strcmp(cmd, "GET_USER") == 0) {
                 if (collected_data.user_list == NULL) {
