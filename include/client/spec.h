@@ -22,7 +22,7 @@ typedef enum {
         ADD_USER,
         POPULATE_USER,
         DELETE_USER,
-        CAPA,
+        COMMANDS,
         N_CMDS,
         CMD_INVALID,
 } monitor_cmd;
@@ -38,7 +38,7 @@ static const int monitor_cmds_args[] = {
         2, // ADD_USER <username> <password>
         1, // POPULATE_USER <username>
         1, // DELETE_USER <username>
-        0, // CAPA
+        0, // COMMANDS
 };
 
 #endif // !CLIENT_SPEC_H

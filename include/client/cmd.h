@@ -29,6 +29,6 @@ int cmd_populate_user(int fd, const char *user);
 
 int cmd_delete_user(int fd, const char *user);
 
-int cmd_capa(int fd);
+int cmd_commands(int fd);
 
 #endif // !CLIENT_CMD_H

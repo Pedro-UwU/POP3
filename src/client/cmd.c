@@ -11,10 +11,9 @@
 
 static const char *monitor_cmds[] = {
 
-        "QUIT",           "LOGIN",         "GET_USERS",
-        "GET_USER",       "GET_CURR_CONN", "GET_TOTAL_CONN",
-        "GET_SENT_BYTES", "ADD_USER",      "POPULATE_USER",
-        "DELETE_USER",    "CAPA"
+        "QUIT",          "LOGIN",          "GET_USERS",      "GET_USER",
+        "GET_CURR_CONN", "GET_TOTAL_CONN", "GET_SENT_BYTES", "ADD_USER",
+        "POPULATE_USER", "DELETE_USER",    "COMMANDS"
 
 };
 
@@ -94,8 +93,8 @@ int cmd_exec(int fd, monitor_cmd cmd, char **args)
                 cmd_delete_user(fd, args[0]);
                 break;
 
-        case CAPA:
-                cmd_capa(fd);
+        case COMMANDS:
+                cmd_commands(fd);
                 break;
 
         default:
@@ -173,9 +172,9 @@ int cmd_delete_user(int fd, const char *user)
         return send_cmd(fd, DELETE_USER, buf);
 }
 
-int cmd_capa(int fd)
+int cmd_commands(int fd)
 {
-        return send_cmd(fd, CAPA, NULL);
+        return send_cmd(fd, COMMANDS, NULL);
 }
 
 static int send_cmd(int fd, monitor_cmd cmd, char *args)

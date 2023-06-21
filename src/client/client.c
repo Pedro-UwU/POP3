@@ -54,7 +54,7 @@ void help(const char *name)
                 "       ADD_USER <username> <password>\n"
                 "       POPULATE_USER <username>\n"
                 "       DELETE_USER <username>\n"
-                "       CAPA\n",
+                "       COMMANDS\n",
                 name);
 }
 
