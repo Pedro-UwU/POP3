@@ -14,6 +14,8 @@ enum monitor_error_codes {
         MONITOR_WRONG_LOGIN,
         MONITOR_INVALID_USER,
         MONITOR_NOT_USER_LIST,
+        MONITOR_FULL_USERS,
+        MONITOR_USER_EXISTS,
         MONITOR_UNKNOWN_ERROR
 };
 

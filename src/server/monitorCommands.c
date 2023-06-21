@@ -94,9 +94,30 @@ void monitor_get_one_user_cmd(struct monitor_collection_data_t *collected_data, 
                         (collected_data->user_list[i].state == USER_ONLINE)  ? "ONLINE" :
                         (collected_data->user_list[i].state == USER_LOGGING) ? "LOGGING_IN" :
                                                                                "OFFLINE";
-            sprintf(msg, "OwO %s %s\r\n", uname, state_str);
+            snprintf(msg, max_msg_len, "OwO %s %s\r\n", uname, state_str);
             return;
         }
     }
     data->err_code = MONITOR_INVALID_USER;
+}
+
+void monitor_add_user_cmd(monitor_data* data, char* msg, size_t max_msg_len) {
+        char* args = data->monitor_parser.arg;
+        char uname[MAX_ARG_LEN];
+        char pass[MAX_ARG_LEN];
+        int valid_credentials = extract_credentials(args, uname, pass);
+        if (valid_credentials == false) {
+                data->err_code = MONITOR_INVALID_ARG;
+                return;
+        }
+        int added = user_add(uname, pass);
+        if (added == -1) {
+                data->err_code = MONITOR_FULL_USERS;
+                return;
+        }
+        if (added == -2) {
+                data->err_code = MONITOR_USER_EXISTS;
+        }
+        snprintf(msg, max_msg_len, "OwO User %s added\r\n\r\n", uname);
+        return;
 }

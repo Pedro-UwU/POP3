@@ -293,6 +293,12 @@ static bool handle_cmd(struct selector_key *key)
                         char* username = parser->arg;
                         monitor_get_one_user_cmd(&collected_data, data, username, msg, 1024);
                 }
+        } else if (strcmp(cmd, "ADD_USER") == 0) {
+                if (collected_data.user_list == NULL) {
+                        data->err_code = MONITOR_NOT_USER_LIST;
+                } else {
+                        monitor_add_user_cmd(data, msg, 1024);
+                }
         }
         /* else if to all the commands */
         else {

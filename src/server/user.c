@@ -59,6 +59,8 @@ int user_add(const char *user, const char *pass)
                         strcpy(users[i].pass, pass);
                         users[i].state = USER_OFFLINE;
                         return 0;
+                } else if (strcmp(user, users[i].uname) == 0) {
+                        return -2; // User already exists 
                 }
         }
         return -1; // Can't add user
