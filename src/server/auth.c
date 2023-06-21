@@ -1,3 +1,4 @@
+#include "server/monitor.h"
 #include <pop3def.h>
 #include <stdbool.h>
 #include <stddef.h>
@@ -85,6 +86,7 @@ unsigned auth_process(struct selector_key *key)
                         return ERROR_POP3;
                 }
                 // send() does not return 0 except if the buffer had 0 bytes
+                monitor_add_sent_bytes(bytes_sent);
                 log(DEBUG, "READ_ADV_1");
                 buffer_read_adv(output_buffer, bytes_sent);
 
