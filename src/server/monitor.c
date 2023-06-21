@@ -269,6 +269,10 @@ static bool handle_error(struct selector_key *key)
                 write_in_buffer(output_buffer, "UwU Sorry that user doesn't exists\r\n\r\n", NULL);
                 return true;
         }
+        if (err_code == MONITOR_ALREADY_LOGGED) {
+                write_in_buffer(output_buffer, "UWU User Already Logged\r\n\r\n", NULL);
+                return true;
+        }
         if (err_code == MONITOR_INVALID_CMD) {
                 write_in_buffer(output_buffer, "UwU Invalid command\r\n\r\n", NULL);
                 return true;
@@ -297,7 +301,12 @@ static bool handle_error(struct selector_key *key)
                 write_in_buffer(output_buffer, "UwU Can't remove user maildir\r\n\r\n", NULL);
                 return true;
         }
-
+        if (err_code == MONITOR_CMD_ERROR) {
+                write_in_buffer(output_buffer, "UwU Error Removing files\r\n\r\n", NULL);
+                return true;
+        }
+        
+        write_in_buffer(output_buffer, "UwU Unexpected Error\r\n\r\n", NULL);
         return false;
 }
 

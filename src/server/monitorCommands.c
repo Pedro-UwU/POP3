@@ -1,4 +1,3 @@
-#include "pop3def.h"
 #define _XOPEN_SOURCE 700
 
 #include "server/pop3.h"
@@ -17,6 +16,8 @@
 #include <string.h>
 #include <stdio.h>
 
+static bool logged = false;
+
 static void handle_command(struct selector_key* key) {
     log(DEBUG, "In handling command");
     monitor_cmd_data_t *data = ((monitor_cmd_data_t*)(key)->data);
@@ -24,9 +25,11 @@ static void handle_command(struct selector_key* key) {
     int bytes_read = read(data->cmd_fd, aux_buffer, 1024);
     if (bytes_read!= 5) { // Not empty response
         data->err_code = MONITOR_CMD_ERROR;
+    } else {
+        data->err_code = MONITOR_NO_ERROR;
     }
+
     data->finished_cmd = true;
-    data->err_code = MONITOR_NO_ERROR;
     close(data->cmd_fd);
     selector_unregister_fd(key->s, data->cmd_fd);
     selector_set_interest(key->s, data->client_fd, OP_WRITE);
@@ -93,6 +96,11 @@ void monitor_login_cmd(monitor_data *data)
                 return;
         }
         if (check_credentials(username, password) == true) {
+                if (logged == true) {
+                    data->err_code = MONITOR_ALREADY_LOGGED;
+                    return;
+                }
+                logged = true;
                 data->logged = true;
                 data->err_code = MONITOR_NO_ERROR;
                 return;
