@@ -101,19 +101,19 @@ int maildir_build(user_maildir_t *maildir)
         // user/Maildir/cur/
         set_path_folder_md(maildir, MAILDIR_CUR);
         if (create_dir(maildir->path) == -1) {
-            return -1;
+                return -1;
         }
 
         // user/Maildir/new/
         set_path_folder_md(maildir, MAILDIR_NEW);
         if (create_dir(maildir->path) == -1) {
-            return -1;
+                return -1;
         }
 
         // user/Maildir/tmp/
         set_path_folder_md(maildir, MAILDIR_TMP);
         if (create_dir(maildir->path) == -1) {
-            return -1;
+                return -1;
         }
         return 0;
 }

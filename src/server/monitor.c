@@ -296,7 +296,19 @@ static bool handle_cmd(struct selector_key *key)
         } else if (strcmp(cmd, "QUIT") == 0) {
                 return false;
         } else if (strcmp(cmd, "COMMANDS") == 0) {
-                snprintf(msg, MAX_MSG_LEN, "OwO Commands:\r\nLOGIN\r\nQUIT\r\nCOMMANDS\r\nGET_CURR_CONN\r\nGET_TOTAL_CONN\r\nGET_SENT_BYTES\r\nGET_USERS\r\nGET_USER <username>\r\nADD_USER <username> <password>\r\nDELETE_USER <username>\r\n\r\n");
+                snprintf(msg, MAX_MSG_LEN,
+                         "OwO Commands:\r\n"
+                         "LOGIN\r\n"
+                         "QUIT\r\n"
+                         "COMMANDS\r\n"
+                         "GET_CURR_CONN\r\n"
+                         "GET_TOTAL_CONN\r\n"
+                         "GET_SENT_BYTES\r\n"
+                         "GET_USERS\r\n"
+                         "GET_USER <username>\r\n"
+                         "ADD_USER <username> <password>\r\n"
+                         "DELETE_USER <username>\r\n"
+                         "\r\n");
         } else if (data->logged == false) {
                 data->err_code = MONITOR_NOT_LOGGED;
         } else if (strcmp(cmd, "GET_CURR_CONN") == 0) {

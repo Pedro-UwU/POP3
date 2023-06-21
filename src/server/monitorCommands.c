@@ -129,25 +129,26 @@ void monitor_add_user_cmd(monitor_data *data, char *msg, size_t max_msg_len)
         maildir_open(&md, uname);
         int maildir_created = maildir_build(&md);
         if (maildir_created == -1) {
-            user_delete(uname);
-            data->err_code = MONITOR_CANT_CREATE_MAILDIR;
-            return;
+                user_delete(uname);
+                data->err_code = MONITOR_CANT_CREATE_MAILDIR;
+                return;
         }
 
         snprintf(msg, max_msg_len, "OwO User %s added\r\n\r\n", uname);
         return;
 }
 
-void monitor_delete_user_cmd(monitor_data *data, char *msg, size_t max_msg_len) {
+void monitor_delete_user_cmd(monitor_data *data, char *msg, size_t max_msg_len)
+{
         char *uname = data->monitor_parser.arg;
         int deleted = user_delete(uname);
         if (deleted == -1) {
-            data->err_code = MONITOR_INVALID_USER;
-            return;
+                data->err_code = MONITOR_INVALID_USER;
+                return;
         }
         if (deleted == -2) {
-            data->err_code = MONITOR_USER_ONLINE;
-            return;
+                data->err_code = MONITOR_USER_ONLINE;
+                return;
         }
 
         snprintf(msg, max_msg_len, "OwO User %s deleted\r\n\r\n", uname);
