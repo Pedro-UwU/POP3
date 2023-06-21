@@ -121,7 +121,19 @@ void monitor_add_user_cmd(monitor_data *data, char *msg, size_t max_msg_len)
         }
         if (added == -2) {
                 data->err_code = MONITOR_USER_EXISTS;
+                return;
         }
+
+        user_maildir_t md;
+        memset(&md, 0, sizeof(user_maildir_t));
+        maildir_open(&md, uname);
+        int maildir_created = maildir_build(&md);
+        if (maildir_created == -1) {
+            user_delete(uname);
+            data->err_code = MONITOR_CANT_CREATE_MAILDIR;
+            return;
+        }
+
         snprintf(msg, max_msg_len, "OwO User %s added\r\n\r\n", uname);
         return;
 }

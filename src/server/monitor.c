@@ -238,27 +238,22 @@ static bool handle_error(struct selector_key *key)
                     key->fd);
                 return true;
         }
-
         if (err_code == MONITOR_UNKNOWN_ERROR) {
                 write_in_buffer(output_buffer, "UwU Unexpected Error\r\n\r\n", NULL);
                 return false;
         }
-
         if (err_code == MONITOR_WRONG_LOGIN) {
                 write_in_buffer(output_buffer, "UwU Wrong username or password\r\n\r\n", NULL);
                 return true;
         }
-
         if (err_code == MONITOR_INVALID_ARG) {
                 write_in_buffer(output_buffer, "UwU Invalid Argument\r\n\r\n", NULL);
                 return true;
         }
-
         if (err_code == MONITOR_INVALID_USER) {
                 write_in_buffer(output_buffer, "UwU Sorry that user doesn't exists\r\n\r\n", NULL);
                 return true;
         }
-
         if (err_code == MONITOR_INVALID_CMD) {
                 write_in_buffer(output_buffer, "UwU Invalid command\r\n\r\n", NULL);
                 return true;
@@ -271,14 +266,16 @@ static bool handle_error(struct selector_key *key)
                 write_in_buffer(output_buffer, "UwU User already exists!\r\n\r\n", NULL);
                 return true;
         }
-
         if (err_code == MONITOR_NOT_LOGGED) {
                 write_in_buffer(output_buffer, "UwU Login required\r\n\r\n", NULL);
                 return true;
         }
-
         if (err_code == MONITOR_USER_ONLINE) {
                 write_in_buffer(output_buffer, "UwU Can't modify online user\r\n\r\n", NULL);
+                return true;
+        }
+        if (err_code == MONITOR_CANT_CREATE_MAILDIR) {
+                write_in_buffer(output_buffer, "UwU Can't create user maildir", NULL);
                 return true;
         }
 

@@ -87,7 +87,7 @@ void maildir_close(user_maildir_t *maildir)
         maildir->new.len = 0;
 }
 
-void maildir_build(user_maildir_t *maildir)
+int maildir_build(user_maildir_t *maildir)
 {
         if (maildir == NULL) {
                 log(ERROR, "NULL maildir");
@@ -100,15 +100,22 @@ void maildir_build(user_maildir_t *maildir)
 
         // user/Maildir/cur/
         set_path_folder_md(maildir, MAILDIR_CUR);
-        create_dir(maildir->path);
+        if (create_dir(maildir->path) == -1) {
+            return -1;
+        }
 
         // user/Maildir/new/
         set_path_folder_md(maildir, MAILDIR_NEW);
-        create_dir(maildir->path);
+        if (create_dir(maildir->path) == -1) {
+            return -1;
+        }
 
         // user/Maildir/tmp/
         set_path_folder_md(maildir, MAILDIR_TMP);
-        create_dir(maildir->path);
+        if (create_dir(maildir->path) == -1) {
+            return -1;
+        }
+        return 0;
 }
 
 void maildir_populate(user_maildir_t *maildir, unsigned n_mails)

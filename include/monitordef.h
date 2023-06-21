@@ -17,6 +17,7 @@ enum monitor_error_codes {
         MONITOR_FULL_USERS,
         MONITOR_USER_EXISTS,
         MONITOR_USER_ONLINE,
+        MONITOR_CANT_CREATE_MAILDIR,
         MONITOR_UNKNOWN_ERROR
 };
 
