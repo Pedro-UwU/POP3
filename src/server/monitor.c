@@ -81,8 +81,10 @@ static void handleMonitorWrite(struct selector_key *key)
         if (data->is_sending) {
                 bool data_remaining = continue_sending(key);
                 if (data_remaining == false) {
-                        selector_set_interest_key(key, OP_READ);
                         data->is_sending = false;
+                }
+                if (buffer_can_read(&data->read_buffer) == false) {
+                        selector_set_interest_key(key, OP_READ);
                 }
                 return;
         }
