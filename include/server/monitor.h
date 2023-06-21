@@ -9,12 +9,12 @@
 #include <stdint.h>
 
 typedef struct monitor_cmd_data {
-    int cmd_fd;
-    int client_fd;
-    bool finished_cmd;
-    fd_selector s;
-    unsigned cmd_code;
-    unsigned err_code;
+        int cmd_fd;
+        int client_fd;
+        bool finished_cmd;
+        fd_selector s;
+        unsigned cmd_code;
+        unsigned err_code;
 } monitor_cmd_data_t;
 
 typedef struct monitor_data {

@@ -18,42 +18,43 @@
 
 static bool logged = false;
 
-static void handle_command(struct selector_key* key) {
-    log(DEBUG, "In handling command");
-    monitor_cmd_data_t *data = ((monitor_cmd_data_t*)(key)->data);
-    char aux_buffer[1024] = {0};
-    int bytes_read = read(data->cmd_fd, aux_buffer, 1024);
-    if (bytes_read!= 5) { // Not empty response
-        data->err_code = MONITOR_CMD_ERROR;
-    } else {
-        data->err_code = MONITOR_NO_ERROR;
-    }
+static void handle_command(struct selector_key *key)
+{
+        log(DEBUG, "In handling command");
+        monitor_cmd_data_t *data = ((monitor_cmd_data_t *)(key)->data);
+        char aux_buffer[1024] = { 0 };
+        int bytes_read = read(data->cmd_fd, aux_buffer, 1024);
+        if (bytes_read != 5) { // Not empty response
+                data->err_code = MONITOR_CMD_ERROR;
+        } else {
+                data->err_code = MONITOR_NO_ERROR;
+        }
 
-    data->finished_cmd = true;
-    close(data->cmd_fd);
-    selector_unregister_fd(key->s, data->cmd_fd);
-    selector_set_interest(key->s, data->client_fd, OP_WRITE);
+        data->finished_cmd = true;
+        close(data->cmd_fd);
+        selector_unregister_fd(key->s, data->cmd_fd);
+        selector_set_interest(key->s, data->client_fd, OP_WRITE);
 }
-
 
 static struct fd_handler monitorCMDHandler = {
         .handle_read = handle_command,
         .handle_write = NULL,
 };
 
-static bool executeCommand(char* cmd, monitor_cmd_data_t* data) {
-        FILE* fp = popen(cmd, "r");
+static bool executeCommand(char *cmd, monitor_cmd_data_t *data)
+{
+        FILE *fp = popen(cmd, "r");
         if (fp == NULL) {
-            log(ERROR, "Can't execute command \"%s\"", cmd);
-            return false;
+                log(ERROR, "Can't execute command \"%s\"", cmd);
+                return false;
         }
         int fd = fileno(fp);
         data->cmd_fd = fd;
         selector_status ss = selector_register(data->s, fd, &monitorCMDHandler, OP_READ, data);
         if (ss != SELECTOR_SUCCESS) {
-            close(fd);   
-            log(ERROR, "Can't register monitor command");
-            return false;
+                close(fd);
+                log(ERROR, "Can't register monitor command");
+                return false;
         }
         return true;
 }
@@ -97,8 +98,8 @@ void monitor_login_cmd(monitor_data *data)
         }
         if (check_credentials(username, password) == true) {
                 if (logged == true) {
-                    data->err_code = MONITOR_ALREADY_LOGGED;
-                    return;
+                        data->err_code = MONITOR_ALREADY_LOGGED;
+                        return;
                 }
                 logged = true;
                 data->logged = true;
@@ -113,8 +114,8 @@ void monitor_quit_cmd(monitor_data *data)
         data->closed = true;
 }
 
-void monitor_get_users_cmd(struct monitor_collection_data_t *collected_data, 
-                           char *msg, size_t max_msg_len)
+void monitor_get_users_cmd(struct monitor_collection_data_t *collected_data, char *msg,
+                           size_t max_msg_len)
 {
         size_t wrote = sprintf(msg, "OwO\r\n");
         for (int i = 0; i < MAX_USERS; i++) {
@@ -208,12 +209,13 @@ void monitor_delete_user_cmd(monitor_data *data, char *msg, size_t max_msg_len)
         return;
 }
 
-void monitor_delete_maildir(fd_selector s, monitor_data* data) {
+void monitor_delete_maildir(fd_selector s, monitor_data *data)
+{
         char cmd[1024];
         user_maildir_t md;
         maildir_open(&md, data->monitor_parser.arg);
         snprintf(cmd, 1024, "rm -rf %s; echo DONE", md.path);
-        
+
         data->cmd_data.client_fd = data->client_fd;
         data->cmd_data.err_code = MONITOR_NO_ERROR;
         data->cmd_data.cmd_code = MONITOR_RM_MAILDIR;

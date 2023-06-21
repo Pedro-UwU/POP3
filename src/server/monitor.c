@@ -26,14 +26,12 @@ static struct monitor_collection_data_t collected_data = {
         .user_list = NULL,
 };
 
-
 static bool write_in_buffer(buffer *buff, const char *msg, const char *log_error);
 static bool continue_sending(struct selector_key *key);
 static bool handle_error(struct selector_key *key);
 static bool handle_finished_cmd(struct selector_key *key);
 static bool handle_cmd(struct selector_key *key);
 static void close_connection(struct selector_key *key);
-
 
 void init_monitor(void)
 {
@@ -86,7 +84,8 @@ static void handleMonitorWrite(struct selector_key *key)
                 if (data_remaining == false) {
                         data->is_sending = false;
                 }
-                if (buffer_can_read(&data->read_buffer) == false && data->cmd_data.finished_cmd == false) {
+                if (buffer_can_read(&data->read_buffer) == false &&
+                    data->cmd_data.finished_cmd == false) {
                         selector_set_interest_key(key, OP_READ);
                 }
                 return;
@@ -95,7 +94,7 @@ static void handleMonitorWrite(struct selector_key *key)
         if (data->cmd_data.finished_cmd == true) {
                 bool can_continue = handle_finished_cmd(key);
                 if (can_continue == false) {
-                    close_connection(key);
+                        close_connection(key);
                 }
                 data->is_sending = true;
                 data->cmd_data.finished_cmd = false;
@@ -295,23 +294,24 @@ static bool handle_error(struct selector_key *key)
                 write_in_buffer(output_buffer, "UwU Error Removing files\r\n\r\n", NULL);
                 return true;
         }
-        
+
         write_in_buffer(output_buffer, "UwU Unexpected Error\r\n\r\n", NULL);
         return false;
 }
 
-static bool handle_finished_cmd(struct selector_key *key) {
-        monitor_data *data = ((monitor_data*)(key)->data);
+static bool handle_finished_cmd(struct selector_key *key)
+{
+        monitor_data *data = ((monitor_data *)(key)->data);
         monitor_cmd_data_t *cmd_data = &data->cmd_data;
         unsigned err_code = cmd_data->err_code;
         unsigned cmd_code = cmd_data->cmd_code;
         if (err_code != MONITOR_NO_ERROR) {
-            data->err_code = cmd_data->err_code;
-            return handle_error(key);
+                data->err_code = cmd_data->err_code;
+                return handle_error(key);
         }
         char msg[MAX_MSG_LEN] = { 0 };
 
-        if  (cmd_code == MONITOR_RM_MAILDIR) {
+        if (cmd_code == MONITOR_RM_MAILDIR) {
                 if (collected_data.user_list == NULL) {
                         data->err_code = MONITOR_NOT_USER_LIST;
                 } else {
@@ -320,7 +320,7 @@ static bool handle_finished_cmd(struct selector_key *key) {
         }
 
         if (data->err_code != MONITOR_NO_ERROR) {
-            return handle_error(key);
+                return handle_error(key);
         }
 
         write_in_buffer(&data->write_buffer, msg, "Can't write msg from handling cmd");
@@ -385,10 +385,10 @@ static bool handle_cmd(struct selector_key *key)
                 if (collected_data.user_list == NULL) {
                         data->err_code = MONITOR_NOT_USER_LIST;
                 } else {
-                    monitor_delete_maildir(key->s, data);
-                    data->is_sending = false;
-                    selector_set_interest(key->s, key->fd, OP_NOOP);
-                    return true; // Executes a command
+                        monitor_delete_maildir(key->s, data);
+                        data->is_sending = false;
+                        selector_set_interest(key->s, key->fd, OP_NOOP);
+                        return true; // Executes a command
                 }
         }
         /* else if to all the commands */
