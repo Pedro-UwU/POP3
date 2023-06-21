@@ -109,7 +109,7 @@ int cmd_exec(int fd, monitor_cmd cmd, char **args)
 
 int cmd_quit(int fd)
 {
-        return send_cmd(fd, LOGIN, NULL);
+        return send_cmd(fd, QUIT, NULL);
 }
 
 int cmd_login(int fd, const char *user, const char *pass)
@@ -180,14 +180,12 @@ int cmd_commands(int fd)
 static int send_cmd(int fd, monitor_cmd cmd, char *args)
 {
         size_t clen = strlen(monitor_cmds[cmd]);
-        size_t alen = 0;
-        size_t send_len = clen + MONITOR_TERMINATOR_LEN;
+        size_t send_len = clen + MONITOR_CMD_TERMINATOR_LEN + 1; // + '\0'
 
         char *buf = NULL;
 
         if (args != NULL) {
-                alen = strlen(args);
-                send_len += alen + 1; // + MONITOR_SEPARATOR
+                send_len += strlen(args) + 1; // + MONITOR_SEPARATOR
         }
 
         buf = malloc(sizeof(char) * send_len);
@@ -197,12 +195,12 @@ static int send_cmd(int fd, monitor_cmd cmd, char *args)
         }
 
         if (args == NULL)
-                snprintf(buf, send_len, "%s%s", monitor_cmds[cmd], MONITOR_TERMINATOR);
+                snprintf(buf, send_len, "%s%s", monitor_cmds[cmd], MONITOR_CMD_TERMINATOR);
         else
                 snprintf(buf, send_len, "%s%s%s%s", monitor_cmds[cmd], MONITOR_SEPARATOR, args,
-                         MONITOR_TERMINATOR);
+                         MONITOR_CMD_TERMINATOR);
 
-        int ans = send(fd, buf, send_len, 0);
+        int ans = send(fd, buf, send_len - 1, 0); // Do not send '\0'
         if (ans < 0) {
                 perror("send");
                 fprintf(stderr, "Error while talking to monitor.\n");
@@ -245,7 +243,7 @@ static int recv_cmd(int fd)
 static bool has_terminator(buffer_t *b)
 {
         for (int i = 0; i < MONITOR_TERMINATOR_LEN; i++) {
-                if (b->last[i] != MONITOR_SEPARATOR[i])
+                if (b->last[i] != MONITOR_TERMINATOR[i])
                         return false;
         }
 

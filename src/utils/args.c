@@ -26,13 +26,12 @@ int parse_args(int argc, char **argv, args_t *args)
         args->version = false;
 
         args->monitor.port = 60401;
+        args->monitor.port_s = "60401";
         args->monitor.ip = "127.0.0.1";
 
         args->server.port = 60711;
+        args->server.port_s = "60711";
         args->server.ip = "127.0.0.1";
-
-        args->user = "USER1";
-        args->pass = "12345";
 
         int i = 0;
         while (i < argc) {

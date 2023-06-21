@@ -39,22 +39,19 @@ void help(const char *name)
                 "\n"
                 "       -h              Print help\n"
                 "       -v              Print version\n"
-                //                "       -p <port>       POP3 server port"
-                //                "       -l <ip>         POP3 server ip"
                 "       -P <port>       Monitor port\n"
                 "       -L <ip>         Monitor ip\n"
                 "\n"
                 " Available COMMANDs:\n"
-                "       LOGIN <user> <password>\n"
-                "       GET_USERS\n"
-                "       GET_USER <username>\n"
-                "       GET_CURR_CONN\n"
-                "       GET_TOTAL_CONN\n"
-                "       GET_SENT_BYTES\n"
-                "       ADD_USER <username> <password>\n"
-                "       POPULATE_USER <username>\n"
-                "       DELETE_USER <username>\n"
-                "       COMMANDS\n",
+                "       GET_USERS                       List all user's status (online, offline)\n"
+                "       GET_USER <username>             Show user status (online, offline, non existent)\n"
+                "       GET_CURR_CONN                   Total number of active connections\n"
+                "       GET_TOTAL_CONN                  Total number of connections since server went up\n"
+                "       GET_SENT_BYTES                  Total number of sent bytes since server went up\n"
+                "       ADD_USER <username> <password>  Add <username> and set <password> for it\n"
+                "       POPULATE_USER <username>        Fill <username> Maildir with random mails\n"
+                "       DELETE_USER <username>          Remove user <username>\n"
+                "       COMMANDS                        List all commands\n",
                 name);
 }
 
@@ -72,23 +69,23 @@ int main(int argc, char **argv)
                 return 1;
         }
 
-        printf("OK\n");
-        printf("\nargs->version = %d", args.version);
-        printf("\nargs->monitor.port = %u", args.monitor.port);
-        printf("\nargs->monitor.ip = %s", args.monitor.ip);
-        printf("\nargs-server.port = %u", args.server.port);
-        printf("\nargs-server.ip = %s", args.server.ip);
-        printf("\nargs->user = %s", args.user);
-        printf("\nargs->pass = %s", args.pass);
-        for (int i = argcmd; i < argc; i++) {
-                printf("\nCOMMAND %d: %s", i, argv[i]);
-        }
-        printf("\n");
+        // Defaults
+        if (args.user == 0)
+                args.user = "admin";
+        if (args.pass == 0)
+                args.pass = "admin";
 
         int socket_fd = connection_open(&args);
+        if (socket_fd < 0) {
+                fprintf(stderr, "Could not connect to server.\n");
+                return 1;
+        }
 
-        if (cmd_login(socket_fd, args.user, args.pass) != 0) {
-                fprintf(stderr, "Could not login.");
+        char *auth[2];
+        auth[0] = args.user;
+        auth[1] = args.pass;
+        if (cmd_exec(socket_fd, LOGIN, auth) < 0) {
+                fprintf(stderr, "Could not login.\n");
                 return 1;
         }
 
@@ -100,7 +97,7 @@ int main(int argc, char **argv)
                 }
 
                 int cmd_argc = monitor_cmds_args[cmd];
-                if (argc - argcmd < cmd_argc + 1) { // Remember to count COMMAND
+                if (argc - argcmd < cmd_argc + 1) { // Take into account cmd too
                         fprintf(stderr, "Missing argument for command %s\n", argv[argcmd]);
                         return 1;
                 }
