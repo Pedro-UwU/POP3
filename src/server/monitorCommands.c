@@ -97,7 +97,7 @@ void monitor_get_one_user_cmd(struct monitor_collection_data_t *collected_data, 
                                           (collected_data->user_list[i].state == USER_LOGGING) ?
                                                   "LOGGING_IN" :
                                                   "OFFLINE";
-                        snprintf(msg, max_msg_len, "OwO %s %s\r\n", uname, state_str);
+                        snprintf(msg, max_msg_len, "OwO %s %s\r\n\r\n", uname, state_str);
                         return;
                 }
         }
