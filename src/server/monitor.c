@@ -16,6 +16,7 @@
 #include <string.h>
 
 #define MAX_SOCKETS 1023
+#define MAX_MSG_LEN 1024
 
 static struct monitor_collection_data_t collected_data = {
         .sent_bytes = 0,
@@ -274,6 +275,11 @@ static bool handle_error(struct selector_key *key)
                 return true;
         }
 
+        if (err_code == MONITOR_USER_ONLINE) {
+                write_in_buffer(output_buffer, "UwU Can't modify online user\r\n\r\n", NULL);
+                return true;
+        }
+
         return false;
 }
 
@@ -282,46 +288,48 @@ static bool handle_cmd(struct selector_key *key)
         monitor_data *data = ((monitor_data *)(key)->data);
         monitor_parser_t *parser = &data->monitor_parser;
         char *cmd = parser->cmd;
-        char msg[1024] = { 0 };
+        char msg[MAX_MSG_LEN] = { 0 };
         if (strcmp(cmd, "LOGIN") == 0) {
                 monitor_login_cmd(data);
                 if (data->err_code == MONITOR_NO_ERROR) {
-                        sprintf(msg, "OwO Successfully logged\r\n\r\n");
+                        snprintf(msg, MAX_MSG_LEN, "OwO Successfully logged\r\n\r\n");
                 }
         } else if (strcmp(cmd, "QUIT") == 0) {
                 return false;
+        } else if (strcmp(cmd, "COMMANDS") == 0) {
+                snprintf(msg, MAX_MSG_LEN, "OwO Commands:\r\nLOGIN\r\nQUIT\r\nCOMMANDS\r\nGET_CURR_CONN\r\nGET_TOTAL_CONN\r\nGET_SENT_BYTES\r\nGET_USERS\r\nGET_USER <username>\r\nADD_USER <username> <password>\r\nDELETE_USER <username>\r\n\r\n");
         } else if (data->logged == false) {
                 data->err_code = MONITOR_NOT_LOGGED;
         } else if (strcmp(cmd, "GET_CURR_CONN") == 0) {
-                sprintf(msg, "OwO %ld\r\n\r\n", collected_data.curr_connections);
+                snprintf(msg, MAX_MSG_LEN, "OwO %ld\r\n\r\n", collected_data.curr_connections);
         } else if (strcmp(cmd, "GET_TOTAL_CONN") == 0) {
-                sprintf(msg, "OwO %ld\r\n\r\n", collected_data.total_connections);
+                snprintf(msg, MAX_MSG_LEN, "OwO %ld\r\n\r\n", collected_data.total_connections);
         } else if (strcmp(cmd, "GET_SENT_BYTES") == 0) {
-                sprintf(msg, "OwO %llu\r\n\r\n", collected_data.sent_bytes);
+                snprintf(msg, MAX_MSG_LEN, "OwO %llu\r\n\r\n", collected_data.sent_bytes);
         } else if (strcmp(cmd, "GET_USERS") == 0) {
                 if (collected_data.user_list == NULL) {
                         data->err_code = MONITOR_NOT_USER_LIST;
                 } else {
-                        monitor_get_users_cmd(&collected_data, data, msg, 1024);
+                        monitor_get_users_cmd(&collected_data, data, msg, MAX_MSG_LEN);
                 }
         } else if (strcmp(cmd, "GET_USER") == 0) {
                 if (collected_data.user_list == NULL) {
                         data->err_code = MONITOR_NOT_USER_LIST;
                 } else {
-                        char* username = parser->arg;
-                        monitor_get_one_user_cmd(&collected_data, data, username, msg, 1024);
+                        char *username = parser->arg;
+                        monitor_get_one_user_cmd(&collected_data, data, username, msg, MAX_MSG_LEN);
                 }
         } else if (strcmp(cmd, "ADD_USER") == 0) {
                 if (collected_data.user_list == NULL) {
                         data->err_code = MONITOR_NOT_USER_LIST;
                 } else {
-                        monitor_add_user_cmd(data, msg, 1024);
+                        monitor_add_user_cmd(data, msg, MAX_MSG_LEN);
                 }
         } else if (strcmp(cmd, "DELETE_USER") == 0) {
                 if (collected_data.user_list == NULL) {
                         data->err_code = MONITOR_NOT_USER_LIST;
                 } else {
-                        monitor_delete_user_cmd(data, msg, 1024);
+                        monitor_delete_user_cmd(data, msg, MAX_MSG_LEN);
                 }
         }
         /* else if to all the commands */
@@ -357,15 +365,18 @@ static void close_connection(struct selector_key *key)
         close(key->fd);
 }
 
-void monitor_add_sent_bytes(unsigned long bytes) {
-    collected_data.sent_bytes += bytes;
+void monitor_add_sent_bytes(unsigned long bytes)
+{
+        collected_data.sent_bytes += bytes;
 }
 
-void monitor_add_connection(void) {
-    collected_data.curr_connections += 1;
-    collected_data.total_connections += 1;
+void monitor_add_connection(void)
+{
+        collected_data.curr_connections += 1;
+        collected_data.total_connections += 1;
 }
 
-void monitor_close_connection(void) {
-    collected_data.curr_connections -= 1;
+void monitor_close_connection(void)
+{
+        collected_data.curr_connections -= 1;
 }

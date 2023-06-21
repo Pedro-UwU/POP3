@@ -82,27 +82,30 @@ void monitor_get_users_cmd(struct monitor_collection_data_t *collected_data, mon
         strcat(msg, "\r\n");
 }
 
-
-void monitor_get_one_user_cmd(struct monitor_collection_data_t *collected_data, monitor_data* data, char* uname, char *msg, size_t max_msg_len) {
-    for (int i = 0; i < MAX_USERS; i++) {
-        if (collected_data->user_list[i].uname[0] == '\0') {
-            continue;
+void monitor_get_one_user_cmd(struct monitor_collection_data_t *collected_data, monitor_data *data,
+                              char *uname, char *msg, size_t max_msg_len)
+{
+        for (int i = 0; i < MAX_USERS; i++) {
+                if (collected_data->user_list[i].uname[0] == '\0') {
+                        continue;
+                }
+                char *aux_uname = collected_data->user_list[i].uname;
+                if (strcmp(uname, aux_uname) == 0) {
+                        char *state_str = (collected_data->user_list[i].state == USER_ONLINE) ?
+                                                  "ONLINE" :
+                                          (collected_data->user_list[i].state == USER_LOGGING) ?
+                                                  "LOGGING_IN" :
+                                                  "OFFLINE";
+                        snprintf(msg, max_msg_len, "OwO %s %s\r\n", uname, state_str);
+                        return;
+                }
         }
-        char* aux_uname = collected_data->user_list[i].uname;
-        if (strcmp(uname, aux_uname) == 0) {
-            char *state_str =
-                        (collected_data->user_list[i].state == USER_ONLINE)  ? "ONLINE" :
-                        (collected_data->user_list[i].state == USER_LOGGING) ? "LOGGING_IN" :
-                                                                               "OFFLINE";
-            snprintf(msg, max_msg_len, "OwO %s %s\r\n", uname, state_str);
-            return;
-        }
-    }
-    data->err_code = MONITOR_INVALID_USER;
+        data->err_code = MONITOR_INVALID_USER;
 }
 
-void monitor_add_user_cmd(monitor_data* data, char* msg, size_t max_msg_len) {
-        char* args = data->monitor_parser.arg;
+void monitor_add_user_cmd(monitor_data *data, char *msg, size_t max_msg_len)
+{
+        char *args = data->monitor_parser.arg;
         char uname[MAX_ARG_LEN];
         char pass[MAX_ARG_LEN];
         int valid_credentials = extract_credentials(args, uname, pass);
@@ -119,5 +122,21 @@ void monitor_add_user_cmd(monitor_data* data, char* msg, size_t max_msg_len) {
                 data->err_code = MONITOR_USER_EXISTS;
         }
         snprintf(msg, max_msg_len, "OwO User %s added\r\n\r\n", uname);
+        return;
+}
+
+void monitor_delete_user_cmd(monitor_data *data, char *msg, size_t max_msg_len) {
+        char *uname = data->monitor_parser.arg;
+        int deleted = user_delete(uname);
+        if (deleted == -1) {
+            data->err_code = MONITOR_INVALID_USER;
+            return;
+        }
+        if (deleted == -2) {
+            data->err_code = MONITOR_USER_ONLINE;
+            return;
+        }
+
+        snprintf(msg, max_msg_len, "OwO User %s deleted\r\n\r\n", uname);
         return;
 }

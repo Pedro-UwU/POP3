@@ -55,7 +55,7 @@ bool user_exists(const char *user)
 int user_add(const char *user, const char *pass)
 {
         if (total_users == MAX_USERS) {
-            return -1;
+                return -1;
         }
         for (size_t i = 0; i < MAX_USERS; i++) {
                 if (users[i].uname[0] == '\0') {
@@ -65,7 +65,7 @@ int user_add(const char *user, const char *pass)
                         total_users++;
                         return 0;
                 } else if (strcmp(user, users[i].uname) == 0) {
-                        return -2; // User already exists 
+                        return -2; // User already exists
                 }
         }
         return -1; // Can't add user
@@ -90,23 +90,22 @@ struct user_t *get_user_array(void)
         return users;
 }
 
-int user_delete(const char *user) {
+int user_delete(const char *user)
+{
         if (user == NULL) {
-            return -1; // 
+                return -1; //
         }
         for (size_t i = 0; i < MAX_USERS; i++) {
                 if (strcmp(user, users[i].uname) == 0) {
-                    if (users[i].state != USER_OFFLINE) {
-                        return -2;
-                    }
-                    memset(&users[i].uname, 0, MAX_ARG_LEN + 1);
-                    memset(&users[i].pass, 0, MAX_ARG_LEN + 1);
-                    users[i].state = USER_OFFLINE;
-                    total_users--;
-                    return 0;
+                        if (users[i].state != USER_OFFLINE) {
+                                return -2;
+                        }
+                        memset(&users[i].uname, 0, MAX_ARG_LEN + 1);
+                        memset(&users[i].pass, 0, MAX_ARG_LEN + 1);
+                        users[i].state = USER_OFFLINE;
+                        total_users--;
+                        return 0;
                 }
         }
         return -1;
-
-
 }
