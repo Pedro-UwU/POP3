@@ -339,6 +339,7 @@ static bool handle_cmd(struct selector_key *key)
                         snprintf(msg, MAX_MSG_LEN, "OwO Successfully logged\r\n\r\n");
                 }
         } else if (strcmp(cmd, "QUIT") == 0) {
+                monitor_quit_cmd(data);
                 return false;
         } else if (strcmp(cmd, "COMMANDS") == 0) {
                 snprintf(msg, MAX_MSG_LEN,

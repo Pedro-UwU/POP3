@@ -111,7 +111,8 @@ void monitor_login_cmd(monitor_data *data)
 
 void monitor_quit_cmd(monitor_data *data)
 {
-        data->closed = true;
+        data->logged = false;
+        logged = false;
 }
 
 void monitor_get_users_cmd(struct monitor_collection_data_t *collected_data, char *msg,
