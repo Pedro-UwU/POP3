@@ -34,7 +34,8 @@ CFLAGS	:= -g -std=c11 -Wno-variadic-macros \
 		-fsanitize=address -fdiagnostics-color=auto \
 		-I$(INCLUDE) $(LDLIBS)
 
-export MAKE CC CFLAGS LDLIBS
+export MAKE MKDIR
+export CC CFLAGS LDLIBS
 export SRCDIR BINDIR INCLUDE OBJDIR
 export TEST_SRCDIR TEST_BINDIR TEST_OBJDIR TEST_OBJFILES
 
@@ -48,8 +49,9 @@ export BOLD BLUE YELLOW NOCOLOR
 
 UTILS	:= $(SRCDIR)/utils
 SERVER	:= $(SRCDIR)/server
+CLIENT	:= $(SRCDIR)/client
 
-all: utils server
+all: utils server client
 
 force: clean all
 
@@ -58,6 +60,9 @@ utils: $(BINDIR) $(OBJDIR)
 
 server: utils | $(BINDIR) $(OBJDIR)
 	@$(MAKE) -C $(SERVER) $(1)
+
+client: utils | $(BINDIR) $(OBJDIR)
+	@$(MAKE) -C $(CLIENT) $(1)
 
 test: server utils | $(TEST_BINDIR)
 	@echo "TODO"
@@ -70,8 +75,9 @@ $(BINDIR) $(OBJDIR) $(TEST_BINDIR):
 clean:
 	$(MAKE) -C $(UTILS) clean
 	$(MAKE) -C $(SERVER) clean
+	$(MAKE) -C $(CLIENT) clean
 
 format:
 	@$(ENVDIR)/restyle.sh
 
-.PHONY: all test clean force format
+.PHONY: all force utils server client test clean format

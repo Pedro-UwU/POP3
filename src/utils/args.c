@@ -45,6 +45,7 @@ int parse_args(int argc, char **argv, args_t *args)
                         return -1;
 
                 case 'p':
+                        args->server.port_s = optarg;
                         args->server.port = parse_port(optarg);
                         if (args->server.port == 0) {
                                 fprintf(stderr, "Invalid port: %s\n", optarg);
@@ -55,6 +56,7 @@ int parse_args(int argc, char **argv, args_t *args)
                         args->server.ip = optarg;
                         break;
                 case 'P':
+                        args->monitor.port_s = optarg;
                         args->monitor.port = parse_port(optarg);
                         if (args->monitor.port == 0) {
                                 fprintf(stderr, "Invalid port: %s\n", optarg);

@@ -8,11 +8,13 @@ typedef struct {
 
         struct {
                 unsigned port;
+                char *port_s;
                 char *ip;
         } monitor;
 
         struct {
                 unsigned port;
+                char *port_s;
                 char *ip;
         } server;
 
