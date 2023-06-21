@@ -91,11 +91,11 @@ int maildir_build(user_maildir_t *maildir)
 {
         if (maildir == NULL) {
                 log(ERROR, "NULL maildir");
-                return;
+                return -2;
         }
         if (maildir->user[0] == '\0') {
                 log(ERROR, "NULL user. Forgot to call maildir_set_username?");
-                return;
+                return -2;
         }
 
         // user/Maildir/cur/
