@@ -35,7 +35,7 @@ int parse_args(int argc, char **argv, args_t *args)
 
         int i = 0;
         while (i < argc) {
-                char c = getopt(argc, argv, "hp:l:P:L:u:v");
+                char c = getopt(argc, argv, "hp:l:P:L:u:vV");
                 if (c == -1)
                         break;
 
@@ -73,6 +73,9 @@ int parse_args(int argc, char **argv, args_t *args)
 
                         break;
                 case 'v':
+                        args->debug = true;
+                        break;
+                case 'V':
                         args->version = true;
                         return 0;
 

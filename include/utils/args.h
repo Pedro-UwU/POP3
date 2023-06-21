@@ -5,6 +5,7 @@
 
 typedef struct {
         bool version;
+        bool debug;
 
         struct {
                 unsigned port;

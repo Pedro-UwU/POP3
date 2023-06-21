@@ -38,7 +38,7 @@ void help(const char *name)
                 "Usage: %s [OPTION] COMAND [ARGUMENTS]...\n"
                 "\n"
                 "       -h              Print help\n"
-                "       -v              Print version\n"
+                "       -V              Print version\n"
                 "       -P <port>       Monitor port\n"
                 "       -L <ip>         Monitor ip\n"
                 "\n"
