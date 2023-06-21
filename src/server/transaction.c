@@ -12,6 +12,7 @@
 #include <server/writter.h>
 #include <utils/logger.h>
 #include <utils/maildir.h> // maildir_*
+#include <utils/stringUtils.h> // convertToUpper
 
 #define MIN(x, y) ((x) > (y) ? (y) : (x))
 
@@ -220,6 +221,7 @@ static void handle_request(struct selector_key *key, char msg[MAX_RSP_LEN])
 {
         client_data *data = GET_DATA(key);
         char *cmd = data->parser.trans_parser.cmd;
+        convertToUpper(cmd);
 
         log(DEBUG, "[TRANSACTION] CMD: %s | ARGS: %s", cmd, data->parser.trans_parser.arg);
 
