@@ -20,7 +20,7 @@ typedef struct {
         char *pass;
 } args_t;
 
-// Returns 0 if everything went fine. > 0 on wrong argument. < 0 on function error
+// Returns optind. On error it returns < 0
 int parse_args(int argc, char **argv, args_t *args);
 
 #endif // !ARGS_H

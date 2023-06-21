@@ -13,12 +13,12 @@ int parse_args(int argc, char **argv, args_t *args)
 {
         if (argv == NULL) {
                 log(ERROR, "NULL argv");
-                return -1;
+                return -2;
         }
 
         if (args == NULL) {
                 log(ERROR, "NULL args");
-                return -1;
+                return -2;
         }
 
         memset(args, 0, sizeof(args_t));
@@ -42,13 +42,13 @@ int parse_args(int argc, char **argv, args_t *args)
 
                 switch (c) {
                 case 'h':
-                        return 1;
+                        return -1;
 
                 case 'p':
                         args->server.port = parse_port(optarg);
                         if (args->server.port == 0) {
                                 fprintf(stderr, "Invalid port: %s\n", optarg);
-                                return 1;
+                                return -1;
                         }
                         break;
                 case 'l':
@@ -58,7 +58,7 @@ int parse_args(int argc, char **argv, args_t *args)
                         args->monitor.port = parse_port(optarg);
                         if (args->monitor.port == 0) {
                                 fprintf(stderr, "Invalid port: %s\n", optarg);
-                                return 1;
+                                return -1;
                         }
                         break;
                 case 'L':
@@ -67,7 +67,7 @@ int parse_args(int argc, char **argv, args_t *args)
                 case 'u':
                         if (user(args, optarg) != 0) {
                                 fprintf(stderr, "Invalid user/password: %s\n", optarg);
-                                return 1;
+                                return -1;
                         }
 
                         break;
@@ -77,13 +77,13 @@ int parse_args(int argc, char **argv, args_t *args)
 
                 default:
                         fprintf(stderr, "Invalid argument '%c'\n", c);
-                        return 1;
+                        return -1;
                 }
 
                 i++;
         }
 
-        return 0;
+        return optind;
 }
 
 // 0 means error
