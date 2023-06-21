@@ -1,9 +1,11 @@
 # Source files
 SRC := $(wildcard *.c)
 
+OBJDIR_UTILS := $(OBJDIR)/utils
+
 # Object files
-OBJ = $(SRC:%.c=$(OBJDIR)/%.o)
-OBJ_TEST = $(SRC:%.c=$(OBJDIR)/%.o)
+OBJ = $(SRC:%.c=$(OBJDIR_UTILS)/%.o)
+OBJ_TEST = $(SRC:%.c=$(OBJDIR_UTILS)/%.o)
 
 # Target executable
 EXEC :=
@@ -11,12 +13,16 @@ EXEC :=
 # Build rule
 all: $(OBJ)
 
-$(OBJ): $(OBJDIR)/%.o: %.c
+$(OBJ): $(OBJDIR_UTILS)/%.o: %.c | $(OBJDIR_UTILS)
 	@echo -e ${BLUE}${BOLD}"==> Utils object: $<"${NOCOLOR}
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 test:
 	@echo "TOOD"
+
+# Create directories
+$(OBJDIR_UTILS):
+	$(MKDIR) $@
 
 # Cleanup rule
 clean:
