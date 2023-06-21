@@ -86,6 +86,7 @@ int main(int argc, char **argv)
         auth[1] = args.pass;
         if (cmd_exec(socket_fd, LOGIN, auth) < 0) {
                 fprintf(stderr, "Could not login.\n");
+                connection_close(socket_fd);
                 return 1;
         }
 
@@ -93,13 +94,13 @@ int main(int argc, char **argv)
                 monitor_cmd cmd = get_cmd_index(argv[argcmd]);
                 if (cmd == CMD_INVALID) {
                         fprintf(stderr, "Invalid command: %s\n", argv[argcmd]);
-                        return 1;
+                        goto finally;
                 }
 
                 int cmd_argc = monitor_cmds_args[cmd];
                 if (argc - argcmd < cmd_argc + 1) { // Take into account cmd too
                         fprintf(stderr, "Missing argument for command %s\n", argv[argcmd]);
-                        return 1;
+                        goto finally;
                 }
 
                 cmd_exec(socket_fd, cmd, argv + argcmd + 1);
@@ -107,6 +108,7 @@ int main(int argc, char **argv)
                 argcmd += 1 + cmd_argc;
         }
 
+finally:
         cmd_quit(socket_fd);
 
         connection_close(socket_fd);
