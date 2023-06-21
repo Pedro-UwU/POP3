@@ -18,10 +18,10 @@ int transit_to(struct selector_key *key, parser_t *parser, unsigned int current_
                         parser_state *from_state = &parser->states[state_transitions[i].from_state];
                         parser_state *to_state = &parser->states[state_transitions[i].to_state];
                         if (from_state->on_departure != NULL) {
-                                from_state->on_departure(key, NULL);
+                                from_state->on_departure(key, '\0');
                         }
                         if (to_state->on_arrival != NULL) {
-                                to_state->on_arrival(key, NULL);
+                                to_state->on_arrival(key, '\0');
                         }
                         return to_state->id;
                 }
@@ -29,11 +29,11 @@ int transit_to(struct selector_key *key, parser_t *parser, unsigned int current_
 
         //If not matching transition
         if (parser->states[current_state_id].on_departure != NULL) {
-                parser->states[current_state_id].on_departure(key, NULL);
+                parser->states[current_state_id].on_departure(key, '\0');
         }
 
         if (parser->error_state->on_arrival != NULL) {
-                parser->error_state->on_arrival(key, NULL);
+                parser->error_state->on_arrival(key, '\0');
         }
         return parser->error_state->id;
 }

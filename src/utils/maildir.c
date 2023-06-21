@@ -460,3 +460,23 @@ static char *move_and_set_flags(bool *success, maildir_mail_t *mail, char *flags
         *success = true;
         return with_flags;
 }
+
+
+int maildir_destroy(user_maildir_t *maildir) {
+        if (maildir == NULL) {
+                log(ERROR, "NULL maildir");
+                return -2;
+        }
+        if (maildir->user[0] == '\0') {
+                log(ERROR, "NULL user. Forgot to call maildir_set_username?");
+                return -2;
+        }
+        DIR* dir = opendir(maildir->path);
+        if (dir != NULL) {
+            closedir(dir);
+            int remove_success = remove(maildir->path);
+            return remove_success;
+        }
+        free(maildir->new.mails);
+        return -3;
+}

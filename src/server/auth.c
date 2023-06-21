@@ -15,8 +15,6 @@
 #include <sys/socket.h>
 #define MAX_BUFF_SIZE 1024
 
-static char aux_buffer[MAX_BUFF_SIZE] = { 0 };
-
 static int process_cmd(client_data *data);
 static char *generateMsg(client_data *data, int status);
 

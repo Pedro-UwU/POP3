@@ -46,6 +46,7 @@ void maildir_close(user_maildir_t *maildir);
 
 maildir_mails_t *maildir_list_new(user_maildir_t *maildir);
 int maildir_build(user_maildir_t *maildir);
+int maildir_destroy(user_maildir_t *maildir_open);
 void maildir_populate(user_maildir_t *maildir, unsigned n_mails);
 
 bool maildir_is_read(maildir_mail_t *mail);
