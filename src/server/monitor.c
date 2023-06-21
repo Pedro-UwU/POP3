@@ -6,6 +6,7 @@
 #include <server/monitor.h>
 #include <server/selector.h>
 #include <server/monitorCommands.h>
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <server/user.h>
@@ -104,7 +105,9 @@ static void handleMonitorWrite(struct selector_key *key)
                 init_monitor_parser(parser);
                 return;
         }
-        selector_set_interest_key(key, OP_READ);
+        if (buffer_can_read(&data->read_buffer) == false) { // Nothing else to read
+                selector_set_interest_key(key, OP_READ);
+        }
 }
 
 static struct fd_handler monitor_handle = {
@@ -266,6 +269,11 @@ static bool handle_error(struct selector_key *key)
                 return true;
         }
 
+        if (err_code == MONITOR_NOT_LOGGED) {
+                write_in_buffer(output_buffer, "UwU Login required\r\n\r\n", NULL);
+                return true;
+        }
+
         return false;
 }
 
@@ -282,6 +290,8 @@ static bool handle_cmd(struct selector_key *key)
                 }
         } else if (strcmp(cmd, "QUIT") == 0) {
                 return false;
+        } else if (data->logged == false) {
+                data->err_code = MONITOR_NOT_LOGGED;
         } else if (strcmp(cmd, "GET_CURR_CONN") == 0) {
                 sprintf(msg, "OwO %ld\r\n\r\n", collected_data.curr_connections);
         } else if (strcmp(cmd, "GET_TOTAL_CONN") == 0) {
@@ -306,6 +316,12 @@ static bool handle_cmd(struct selector_key *key)
                         data->err_code = MONITOR_NOT_USER_LIST;
                 } else {
                         monitor_add_user_cmd(data, msg, 1024);
+                }
+        } else if (strcmp(cmd, "DELETE_USER") == 0) {
+                if (collected_data.user_list == NULL) {
+                        data->err_code = MONITOR_NOT_USER_LIST;
+                } else {
+                        monitor_delete_user_cmd(data, msg, 1024);
                 }
         }
         /* else if to all the commands */
