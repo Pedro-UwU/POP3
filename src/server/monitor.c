@@ -1,3 +1,4 @@
+
 #include "monitordef.h"
 #include "pop3def.h"
 #include <server/parsers/monitorParser.h>
@@ -25,12 +26,15 @@ static struct monitor_collection_data_t collected_data = {
         .user_list = NULL,
 };
 
+
 static bool write_in_buffer(buffer *buff, const char *msg, const char *log_error);
 static void write_server_down_msg(struct selector_key *key);
 static bool continue_sending(struct selector_key *key);
 static bool handle_error(struct selector_key *key);
+static bool handle_finished_cmd(struct selector_key *key);
 static bool handle_cmd(struct selector_key *key);
 static void close_connection(struct selector_key *key);
+
 
 void init_monitor(void)
 {
@@ -83,9 +87,19 @@ static void handleMonitorWrite(struct selector_key *key)
                 if (data_remaining == false) {
                         data->is_sending = false;
                 }
-                if (buffer_can_read(&data->read_buffer) == false) {
+                if (buffer_can_read(&data->read_buffer) == false && data->cmd_data.finished_cmd == false) {
                         selector_set_interest_key(key, OP_READ);
                 }
+                return;
+        }
+
+        if (data->cmd_data.finished_cmd == true) {
+                bool can_continue = handle_finished_cmd(key);
+                if (can_continue == false) {
+                    close_connection(key);
+                }
+                data->is_sending = true;
+                data->cmd_data.finished_cmd = false;
                 return;
         }
 
@@ -99,12 +113,12 @@ static void handleMonitorWrite(struct selector_key *key)
                         }
                         return;
                 }
+                data->is_sending = true;
                 bool can_continue = handle_cmd(key);
                 if (can_continue == false) {
                         close_connection(key);
                         return;
                 }
-                data->is_sending = true;
                 init_monitor_parser(parser);
                 return;
         }
@@ -128,6 +142,7 @@ static void init_new_monitor_data(monitor_data *data, int fd)
         data->err_code = MONITOR_NO_ERROR;
         memset(&data->write_buffer_data, 0, MONITOR_BUFFER_SIZE);
         memset(&data->read_buffer_data, 0, MONITOR_BUFFER_SIZE);
+        memset(&data->cmd_data, 0, sizeof(monitor_cmd_data_t));
         buffer_init(&data->write_buffer, MONITOR_BUFFER_SIZE, data->write_buffer_data);
         buffer_init(&data->read_buffer, MONITOR_BUFFER_SIZE, data->read_buffer_data);
         init_monitor_parser(&data->monitor_parser);
@@ -275,11 +290,42 @@ static bool handle_error(struct selector_key *key)
                 return true;
         }
         if (err_code == MONITOR_CANT_CREATE_MAILDIR) {
-                write_in_buffer(output_buffer, "UwU Can't create user maildir", NULL);
+                write_in_buffer(output_buffer, "UwU Can't create user maildir\r\n\r\n", NULL);
+                return true;
+        }
+        if (err_code == MONITOR_CANT_RM_MAILDIR) {
+                write_in_buffer(output_buffer, "UwU Can't remove user maildir\r\n\r\n", NULL);
                 return true;
         }
 
         return false;
+}
+
+static bool handle_finished_cmd(struct selector_key *key) {
+        monitor_data *data = ((monitor_data*)(key)->data);
+        monitor_cmd_data_t *cmd_data = &data->cmd_data;
+        unsigned err_code = cmd_data->err_code;
+        unsigned cmd_code = cmd_data->cmd_code;
+        if (err_code != MONITOR_NO_ERROR) {
+            data->err_code = cmd_data->err_code;
+            return handle_error(key);
+        }
+        char msg[MAX_MSG_LEN] = { 0 };
+
+        if  (cmd_code == MONITOR_RM_MAILDIR) {
+                if (collected_data.user_list == NULL) {
+                        data->err_code = MONITOR_NOT_USER_LIST;
+                } else {
+                        monitor_delete_user_cmd(data, msg, MAX_MSG_LEN);
+                }
+        }
+
+        if (data->err_code != MONITOR_NO_ERROR) {
+            return handle_error(key);
+        }
+
+        write_in_buffer(&data->write_buffer, msg, "Can't write msg from handling cmd");
+        return true;
 }
 
 static bool handle_cmd(struct selector_key *key)
@@ -328,7 +374,10 @@ static bool handle_cmd(struct selector_key *key)
                 if (collected_data.user_list == NULL) {
                         data->err_code = MONITOR_NOT_USER_LIST;
                 } else {
-                        monitor_delete_user_cmd(data, msg, MAX_MSG_LEN);
+                    monitor_delete_maildir(key->s, data);
+                    data->is_sending = false;
+                    selector_set_interest(key->s, key->fd, OP_NOOP);
+                    return true; // Executes a command
                 }
         }
         /* else if to all the commands */

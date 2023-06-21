@@ -18,6 +18,8 @@ enum monitor_error_codes {
         MONITOR_USER_EXISTS,
         MONITOR_USER_ONLINE,
         MONITOR_CANT_CREATE_MAILDIR,
+        MONITOR_CANT_RM_MAILDIR,
+        MONITOR_CMD_ERROR,
         MONITOR_UNKNOWN_ERROR
 };
 

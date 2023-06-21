@@ -8,6 +8,15 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+typedef struct monitor_cmd_data {
+    int cmd_fd;
+    int client_fd;
+    bool finished_cmd;
+    fd_selector s;
+    unsigned cmd_code;
+    unsigned err_code;
+} monitor_cmd_data_t;
+
 typedef struct monitor_data {
         bool closed;
         bool is_sending;
@@ -19,6 +28,7 @@ typedef struct monitor_data {
         struct buffer write_buffer;
         struct buffer read_buffer;
         monitor_parser_t monitor_parser;
+        monitor_cmd_data_t cmd_data;
 } monitor_data;
 
 struct monitor_collection_data_t {

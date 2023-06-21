@@ -1,14 +1,59 @@
+#include "pop3def.h"
+#define _XOPEN_SOURCE 700
+
+#include "server/pop3.h"
+#include <stdint.h>
+#include <unistd.h>
+#include <errno.h>
 #include <server/buffer.h>
 #include <server/user.h>
 #include <server/monitor.h>
 #include <server/monitorCommands.h>
 #include <utils/maildir.h>
+#include <monitordef.h>
 #include <utils/logger.h>
 #include <stdbool.h>
 #include <monitordef.h>
 #include <string.h>
 #include <stdio.h>
-#include <pop3def.h>
+
+static void handle_command(struct selector_key* key) {
+    log(DEBUG, "In handling command");
+    monitor_cmd_data_t *data = ((monitor_cmd_data_t*)(key)->data);
+    char aux_buffer[1024] = {0};
+    int bytes_read = read(data->cmd_fd, aux_buffer, 1024);
+    if (bytes_read!= 5) { // Not empty response
+        data->err_code = MONITOR_CMD_ERROR;
+    }
+    data->finished_cmd = true;
+    data->err_code = MONITOR_NO_ERROR;
+    close(data->cmd_fd);
+    selector_unregister_fd(key->s, data->cmd_fd);
+    selector_set_interest(key->s, data->client_fd, OP_WRITE);
+}
+
+
+static struct fd_handler monitorCMDHandler = {
+        .handle_read = handle_command,
+        .handle_write = NULL,
+};
+
+static bool executeCommand(char* cmd, monitor_cmd_data_t* data) {
+        FILE* fp = popen(cmd, "r");
+        if (fp == NULL) {
+            log(ERROR, "Can't execute command \"%s\"", cmd);
+            return false;
+        }
+        int fd = fileno(fp);
+        data->cmd_fd = fd;
+        selector_status ss = selector_register(data->s, fd, &monitorCMDHandler, OP_READ, data);
+        if (ss != SELECTOR_SUCCESS) {
+            close(fd);   
+            log(ERROR, "Can't register monitor command");
+            return false;
+        }
+        return true;
+}
 
 static bool check_credentials(const char *user, const char *pass)
 {
@@ -152,4 +197,18 @@ void monitor_delete_user_cmd(monitor_data *data, char *msg, size_t max_msg_len) 
 
         snprintf(msg, max_msg_len, "OwO User %s deleted\r\n\r\n", uname);
         return;
+}
+
+void monitor_delete_maildir(fd_selector s, monitor_data* data) {
+        char cmd[1024];
+        user_maildir_t md;
+        maildir_open(&md, data->monitor_parser.arg);
+        snprintf(cmd, 1024, "rm -rf %s; echo DONE", md.path);
+        
+        data->cmd_data.client_fd = data->client_fd;
+        data->cmd_data.err_code = MONITOR_NO_ERROR;
+        data->cmd_data.cmd_code = MONITOR_RM_MAILDIR;
+        data->cmd_data.finished_cmd = false;
+        data->cmd_data.s = s;
+        executeCommand(cmd, &data->cmd_data);
 }
