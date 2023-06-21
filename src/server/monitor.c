@@ -257,6 +257,14 @@ static bool handle_error(struct selector_key *key)
                 write_in_buffer(output_buffer, "UwU Invalid command\r\n\r\n", NULL);
                 return true;
         }
+        if (err_code == MONITOR_FULL_USERS) {
+                write_in_buffer(output_buffer, "UwU Max number of users reached\r\n\r\n", NULL);
+                return true;
+        }
+        if (err_code == MONITOR_USER_EXISTS) {
+                write_in_buffer(output_buffer, "UwU User already exists!\r\n\r\n", NULL);
+                return true;
+        }
 
         return false;
 }
