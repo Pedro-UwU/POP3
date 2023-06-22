@@ -51,9 +51,8 @@ int createTCPSocketServer(char *port, int protocol)
 
                 setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &(int){ 1 }, sizeof(int));
                 if (protocol == AF_INET6) {
-                    setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, &(int){ 1 }, sizeof(int)); 
+                        setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, &(int){ 1 }, sizeof(int));
                 }
-
 
                 if (bind(fd, addr->ai_addr, addr->ai_addrlen) < 0) {
                         log(ERROR, "[serverUtils][createTCPSocketServer] Unable to bind socket %d",
@@ -74,7 +73,6 @@ int createTCPSocketServer(char *port, int protocol)
                 close(fd);
                 return -1;
         }
-
 
         log(DEBUG, "[serverUtils][createTCPSocketServer] Socket %d listening", fd);
 

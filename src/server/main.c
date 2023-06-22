@@ -114,8 +114,7 @@ int main(int argc, char **argv)
                 goto finally;
         }
         log(DEBUG, "POP3 IPv4 socket created.");
-        
-        
+
         // Create master POP3 socket
         int masterSocket6 = createTCPSocketServer(args.server.port_s, AF_INET6);
         if (masterSocket6 < 0) {
@@ -123,7 +122,6 @@ int main(int argc, char **argv)
                 goto finally;
         }
         log(DEBUG, "POP3 IPv6 socket created.");
-
 
         // Create master Monitor Socket
         int monitorSocket = createTCPSocketServer(args.monitor.port_s, AF_INET);
@@ -183,7 +181,7 @@ int main(int argc, char **argv)
                 err_msg = "Error registering master handler";
                 goto finally;
         }
-        
+
         ss = selector_register(selector, masterSocket6, &masterHandler, OP_READ, NULL);
 
         if (ss != SELECTOR_SUCCESS) {

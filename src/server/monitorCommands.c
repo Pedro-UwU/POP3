@@ -102,7 +102,7 @@ static bool extract_credentials(const char *args, char *username, char *password
 
 /* Commands ----------------------------------------------------------------------------------------------------------------*/
 
-void monitor_login_cmd(monitor_data *data, bool* logged)
+void monitor_login_cmd(monitor_data *data, bool *logged)
 {
         char *args = data->monitor_parser.arg;
         char username[40] = { 0 };
