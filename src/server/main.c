@@ -108,15 +108,25 @@ int main(int argc, char **argv)
         fd_selector selector = NULL;
 
         // Create master POP3 socket
-        int masterSocket = createTCPSocketServer(args.server.port_s, args.server.ip);
+        int masterSocket = createTCPSocketServer(args.server.port_s, AF_INET);
         if (masterSocket < 0) {
                 log(FATAL, "Couln't create master socket");
                 goto finally;
         }
-        log(DEBUG, "POP3 socket created.");
+        log(DEBUG, "POP3 IPv4 socket created.");
+        
+        
+        // Create master POP3 socket
+        int masterSocket6 = createTCPSocketServer(args.server.port_s, AF_INET6);
+        if (masterSocket6 < 0) {
+                log(FATAL, "Couln't create master socket");
+                goto finally;
+        }
+        log(DEBUG, "POP3 IPv6 socket created.");
+
 
         // Create master Monitor Socket
-        int monitorSocket = createTCPSocketServer(args.monitor.port_s, args.monitor.ip);
+        int monitorSocket = createTCPSocketServer(args.monitor.port_s, AF_INET);
         if (monitorSocket < 0) {
                 log(FATAL, "Couldn't create monitor socket");
                 goto finally;
@@ -128,6 +138,11 @@ int main(int argc, char **argv)
         signal(SIGTSTP, handleSignal);
 
         if (selector_fd_set_nio(masterSocket) == -1) {
+                err_msg = "getting server socket flags";
+                goto finally;
+        }
+
+        if (selector_fd_set_nio(masterSocket6) == -1) {
                 err_msg = "getting server socket flags";
                 goto finally;
         }
@@ -166,6 +181,13 @@ int main(int argc, char **argv)
 
         if (ss != SELECTOR_SUCCESS) {
                 err_msg = "Error registering master handler";
+                goto finally;
+        }
+        
+        ss = selector_register(selector, masterSocket6, &masterHandler, OP_READ, NULL);
+
+        if (ss != SELECTOR_SUCCESS) {
+                err_msg = "Error registering master handler IPv6";
                 goto finally;
         }
 
@@ -213,6 +235,9 @@ finally:
 
         if (masterSocket >= 0) {
                 close(masterSocket);
+        }
+        if (masterSocket6 >= 0) {
+                close(masterSocket6);
         }
         if (monitorSocket >= 0) {
                 close(monitorSocket);

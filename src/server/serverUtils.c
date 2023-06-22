@@ -23,9 +23,8 @@
 #include <utils/logger.h>
 #include <server/serverUtils.h>
 
-int createTCPSocketServer(char *port, char *ip)
+int createTCPSocketServer(char *port, int protocol)
 {
-        log(DEBUG, "IP: %s", ip);
         log(DEBUG, "Port: %s", port);
 
         int fd = -1;
@@ -34,11 +33,11 @@ int createTCPSocketServer(char *port, char *ip)
 
         memset(&ainfo, 0, sizeof(struct addrinfo));
 
-        ainfo.ai_family = AF_UNSPEC; // IPv4 or IPv6
+        ainfo.ai_family = protocol;
         ainfo.ai_socktype = SOCK_STREAM;
         ainfo.ai_protocol = IPPROTO_TCP;
 
-        if (0 != getaddrinfo(ip, port, &ainfo, &sv_addr)) {
+        if (0 != getaddrinfo(NULL, port, &ainfo, &sv_addr)) {
                 return -1;
         }
 
@@ -46,16 +45,20 @@ int createTCPSocketServer(char *port, char *ip)
                 fd = socket(addr->ai_family, addr->ai_socktype, addr->ai_protocol);
                 if (fd < 0) {
                         log(ERROR, "[serverUtils][createTCPSocketServer] Unable to create socket");
-                        return -1;
+                        continue;
                 }
 
                 setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &(int){ 1 }, sizeof(int));
+                if (protocol == AF_INET6) {
+                    setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, &(int){ 1 }, sizeof(int)); 
+                }
+
 
                 if (bind(fd, addr->ai_addr, addr->ai_addrlen) < 0) {
                         log(ERROR, "[serverUtils][createTCPSocketServer] Unable to bind socket %d",
                             fd);
                         close(fd);
-                        return -1;
+                        continue;
                 }
                 log(DEBUG, "[serverUtils][createTCPSocketServer] Socket %d bounded to port %s", fd,
                     port);
@@ -70,6 +73,7 @@ int createTCPSocketServer(char *port, char *ip)
                 close(fd);
                 return -1;
         }
+
 
         log(DEBUG, "[serverUtils][createTCPSocketServer] Socket %d listening", fd);
 
