@@ -191,6 +191,12 @@ static int process_cmd(client_data *data)
                 data->next_state = TRANSACTION;
                 return 0;
         }
+
+        if (strcmp("CAPA", cmd) == 0) {
+                data->next_state = AUTH;
+                data->err_code = NO_ERROR;
+                return 0;
+        }
         if (data->err_code != INVALID_CHAR) {
                 data->err_code = INVALID_CMD;
                 data->next_state = AUTH;
@@ -209,6 +215,9 @@ static char *generateMsg(client_data *data, int status)
                 }
                 if (user_get_state((const char *)data->user) == USER_LOGGING) {
                         return "+OK valid user\r\n";
+                }
+                if (strcmp("CAPA", data->parser.auth_parser.cmd) == 0) {
+                        return "+OK Capability list follows\r\nUSER\r\nPIPELINING\r\n.\r\n";
                 }
                 return "+OK logged in\r\n";
         }

@@ -245,6 +245,8 @@ static void handle_request(struct selector_key *key, char msg[MAX_RSP_LEN])
         } else if (strcmp(cmd, "QUIT") == 0) {
                 msg[0] = '\0';
                 data->next_state = UPDATE;
+        } else if (strcmp(cmd, "CAPA") == 0) {
+                sprintf(msg, "+OK Capability list follows\r\nUSER\r\nPIPELINING\r\n.\r\n");
         } else {
                 sprintf(msg, "-ERR invalid command\r\n");
         }

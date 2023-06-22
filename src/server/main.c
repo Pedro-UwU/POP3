@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include <signal.h>
@@ -16,6 +17,7 @@
 #include <server/parsers/transParser.h>
 #include <server/parsers/updateParser.h>
 #include <utils/args.h>
+#include <time.h>
 #include <utils/logger.h>
 
 int serverRunning = 1;
