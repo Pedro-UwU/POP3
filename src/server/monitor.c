@@ -19,6 +19,8 @@
 #define MAX_SOCKETS 1023
 #define MAX_MSG_LEN 1024
 
+static bool logged = false;
+
 static struct monitor_collection_data_t collected_data = {
         .sent_bytes = 0,
         .curr_connections = 0,
@@ -340,7 +342,7 @@ static bool handle_cmd(struct selector_key *key)
         char *cmd = parser->cmd;
         char msg[MAX_MSG_LEN] = { 0 };
         if (strcmp(cmd, "LOGIN") == 0) {
-                monitor_login_cmd(data);
+                monitor_login_cmd(data, &logged);
                 if (data->err_code == MONITOR_NO_ERROR) {
                         snprintf(msg, MAX_MSG_LEN, "OwO Successfully logged\r\n\r\n");
                 }
@@ -434,6 +436,7 @@ static void close_connection(struct selector_key *key)
         }
 
         data->closed = true;
+        logged = false;
         log(INFO, "Closing connection from monitor socket %d", key->fd);
 
         selector_unregister_fd(key->s, key->fd);

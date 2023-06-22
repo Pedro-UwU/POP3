@@ -9,7 +9,7 @@ enum monitor_cmd_code {
         MONITOR_POPULATE_MAILDIR,
 };
 
-void monitor_login_cmd(monitor_data *data);
+void monitor_login_cmd(monitor_data *data, bool *logged);
 void monitor_quit_cmd(monitor_data *data);
 void monitor_get_users_cmd(struct monitor_collection_data_t *collected_data, char *msg,
                            size_t max_msg_len);

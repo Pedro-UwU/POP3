@@ -17,8 +17,6 @@
 #include <string.h>
 #include <stdio.h>
 
-static bool logged = false;
-
 static void handle_command(struct selector_key *key)
 {
         log(DEBUG, "In handling command");
@@ -104,7 +102,7 @@ static bool extract_credentials(const char *args, char *username, char *password
 
 /* Commands ----------------------------------------------------------------------------------------------------------------*/
 
-void monitor_login_cmd(monitor_data *data)
+void monitor_login_cmd(monitor_data *data, bool* logged)
 {
         char *args = data->monitor_parser.arg;
         char username[40] = { 0 };
@@ -116,11 +114,11 @@ void monitor_login_cmd(monitor_data *data)
                 return;
         }
         if (check_credentials(username, password) == true) {
-                if (logged == true) {
+                if (*logged == true) {
                         data->err_code = MONITOR_ALREADY_LOGGED;
                         return;
                 }
-                logged = true;
+                *logged = true;
                 data->logged = true;
                 data->err_code = MONITOR_NO_ERROR;
                 return;
@@ -131,7 +129,6 @@ void monitor_login_cmd(monitor_data *data)
 void monitor_quit_cmd(monitor_data *data)
 {
         data->logged = false;
-        logged = false;
 }
 
 void monitor_get_users_cmd(struct monitor_collection_data_t *collected_data, char *msg,
