@@ -256,10 +256,10 @@ void monitor_populate_maildir(fd_selector s, monitor_data *data)
         sprintf(cmd,
                 "id=$(date +%%s); "
                 "for i in $(seq 1 10); do "
-                "dd if=/dev/urandom bs=1KB count=$((12 + (%d*i) %% 49152)) 2> /dev/null | base64 > \"%s/new/${id}_mail\"${i}; done; "
+                "dd if=/dev/urandom bs=1KB count=$((12 + (%d*i) %% 49152)) 2> /dev/null | base64 > \"%s/new/${id}_mail\"${i}; printf \'\\r\\n\' >> \"%s/new/${id}_mail\"${i}; done; "
                 "[ $(find %s/new/ -maxdepth 1 -type f -name \"${id}_mail*\" | wc -l) -eq 10 ] "
                 "&& echo \"DONE\" || rm %s/new/\"${id}\"*",
-                111111, md.path, md.path, md.path);
+                1111, md.path, md.path, md.path);
         init_cmd_data(&data->cmd_data, data->client_fd, s, MONITOR_POPULATE_MAILDIR);
         executeCommand(cmd, &data->cmd_data);
 }

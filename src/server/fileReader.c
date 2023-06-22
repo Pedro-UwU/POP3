@@ -42,8 +42,8 @@ static void handle_file_reader(struct selector_key *key)
         if (read_bytes == 0) { // EOF
                 selector_unregister_fd(key->s, key->fd);
                 *(fr_data->file_reader) = NULL;
-                snprintf((char *)write_ptr, can_read_bytes, "\r\n");
-                buffer_write_adv(output_buffer, strlen("\r\n"));
+                // snprintf((char *)write_ptr, can_read_bytes, "\r\n");
+                // buffer_write_adv(output_buffer, strlen("\r\n"));
                 close(fr_data->fd);
                 log(DEBUG, "File reader EOF");
                 return;
