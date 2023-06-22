@@ -290,8 +290,12 @@ static bool handle_error(struct selector_key *key)
                 write_in_buffer(output_buffer, "UwU Can't remove user maildir\r\n\r\n", NULL);
                 return true;
         }
-        if (err_code == MONITOR_CMD_ERROR) {
+        if (err_code == MONITOR_CANT_RM_MAILDIR) {
                 write_in_buffer(output_buffer, "UwU Error Removing files\r\n\r\n", NULL);
+                return true;
+        }
+        if (err_code == MONITOR_POPULATE_ERROR) {
+                write_in_buffer(output_buffer, "UwU Couldn't populate maildir\r\n\r\n", NULL);
                 return true;
         }
 
@@ -317,6 +321,8 @@ static bool handle_finished_cmd(struct selector_key *key)
                 } else {
                         monitor_delete_user_cmd(data, msg, MAX_MSG_LEN);
                 }
+        } else if (cmd_code == MONITOR_POPULATE_MAILDIR) {
+                snprintf(msg, MAX_MSG_LEN, "OwO User populated\r\n\r\n");
         }
 
         if (data->err_code != MONITOR_NO_ERROR) {
@@ -387,10 +393,24 @@ static bool handle_cmd(struct selector_key *key)
                         data->err_code = MONITOR_NOT_USER_LIST;
                 } else {
                         monitor_delete_maildir(key->s, data);
-                        data->is_sending = false;
-                        selector_set_interest(key->s, key->fd, OP_NOOP);
-                        return true; // Executes a command
+                        if (data->err_code == NO_ERROR) {
+                                data->is_sending = false;
+                                selector_set_interest(key->s, key->fd, OP_NOOP);
+                                return true; // Executes a command
+                        }
                 }
+        } else if (strcmp(cmd, "POPULATE_USER") == 0) {
+                if (collected_data.user_list == NULL) {
+                        data->err_code = MONITOR_NOT_USER_LIST;
+                } else {
+                        monitor_populate_maildir(key->s, data);
+                        if (data->err_code == NO_ERROR) {
+                                data->is_sending = false;
+                                selector_set_interest(key->s, key->fd, OP_NOOP);
+                                return true;
+                        }
+                }
+
         }
         /* else if to all the commands */
         else {

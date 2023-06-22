@@ -1,6 +1,7 @@
 #define _XOPEN_SOURCE 700
 
 #include "server/pop3.h"
+#include <stdlib.h>
 #include <stdint.h>
 #include <unistd.h>
 #include <errno.h>
@@ -24,8 +25,15 @@ static void handle_command(struct selector_key *key)
         monitor_cmd_data_t *data = ((monitor_cmd_data_t *)(key)->data);
         char aux_buffer[1024] = { 0 };
         int bytes_read = read(data->cmd_fd, aux_buffer, 1024);
+        log(DEBUG, "Read Bytes %d", bytes_read);
         if (bytes_read != 5) { // Not empty response
-                data->err_code = MONITOR_CMD_ERROR;
+                if (data->cmd_code == MONITOR_RM_MAILDIR) {
+                        data->err_code = MONITOR_CANT_RM_MAILDIR;
+                } else if (data->cmd_code == MONITOR_POPULATE_MAILDIR) {
+                        data->err_code = MONITOR_POPULATE_ERROR;
+                } else {
+                        data->err_code = MONITOR_UNKNOWN_ERROR;
+                }
         } else {
                 data->err_code = MONITOR_NO_ERROR;
         }
@@ -34,6 +42,16 @@ static void handle_command(struct selector_key *key)
         close(data->cmd_fd);
         selector_unregister_fd(key->s, data->cmd_fd);
         selector_set_interest(key->s, data->client_fd, OP_WRITE);
+}
+
+static void init_cmd_data(monitor_cmd_data_t *cmd_data, int client_fd, fd_selector s,
+                          unsigned cmd_code)
+{
+        cmd_data->client_fd = client_fd;
+        cmd_data->err_code = MONITOR_NO_ERROR;
+        cmd_data->cmd_code = cmd_code;
+        cmd_data->finished_cmd = false;
+        cmd_data->s = s;
 }
 
 static struct fd_handler monitorCMDHandler = {
@@ -56,6 +74,7 @@ static bool executeCommand(char *cmd, monitor_cmd_data_t *data)
                 log(ERROR, "Can't register monitor command");
                 return false;
         }
+        log(DEBUG, "Command executed");
         return true;
 }
 
@@ -212,15 +231,38 @@ void monitor_delete_user_cmd(monitor_data *data, char *msg, size_t max_msg_len)
 
 void monitor_delete_maildir(fd_selector s, monitor_data *data)
 {
+        char *uname = data->monitor_parser.arg;
+        if (user_exists(uname) == false) {
+                data->err_code = MONITOR_USER_EXISTS;
+                return;
+        }
+
         char cmd[1024];
         user_maildir_t md;
         maildir_open(&md, data->monitor_parser.arg);
         snprintf(cmd, 1024, "rm -rf %s; echo DONE", md.path);
 
-        data->cmd_data.client_fd = data->client_fd;
-        data->cmd_data.err_code = MONITOR_NO_ERROR;
-        data->cmd_data.cmd_code = MONITOR_RM_MAILDIR;
-        data->cmd_data.finished_cmd = false;
-        data->cmd_data.s = s;
+        init_cmd_data(&data->cmd_data, data->client_fd, s, MONITOR_RM_MAILDIR);
+        executeCommand(cmd, &data->cmd_data);
+}
+
+void monitor_populate_maildir(fd_selector s, monitor_data *data)
+{
+        char *uname = data->monitor_parser.arg;
+        if (user_exists(uname) == false) {
+                data->err_code = MONITOR_INVALID_USER;
+                return;
+        }
+        char cmd[1024];
+        user_maildir_t md;
+        maildir_open(&md, data->monitor_parser.arg);
+        sprintf(cmd,
+                "id=$(date +%%s); "
+                "for i in $(seq 1 10); do "
+                "dd if=/dev/urandom bs=1KB count=$((12 + (%d*i) %% 49152)) 2> /dev/null | base64 > \"%s/new/${id}_mail\"${i}; done; "
+                "[ $(find %s/new/ -maxdepth 1 -type f -name \"${id}_mail*\" | wc -l) -eq 10 ] "
+                "&& echo \"DONE\" || rm %s/new/\"${id}\"*",
+                111111, md.path, md.path, md.path);
+        init_cmd_data(&data->cmd_data, data->client_fd, s, MONITOR_POPULATE_MAILDIR);
         executeCommand(cmd, &data->cmd_data);
 }
