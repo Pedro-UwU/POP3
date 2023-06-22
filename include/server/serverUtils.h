@@ -3,6 +3,6 @@
 #define SERVER_UTILS_H
 #define MAX_PENDING 5
 
-int createTCPSocketServer(unsigned int port);
+int createTCPSocketServer(char *port, char *ip);
 
 #endif // !SERVER_UTILS_H

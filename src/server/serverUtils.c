@@ -1,5 +1,13 @@
 #ifndef SERVER_UTILS
 #define SERVER_UTILS
+
+#ifndef _POSIX_C_SOURCE
+#define _POSIX_C_SOURCE 200112L
+#elif _POSIX_C_SOURCE < 200112L
+#undef _POSIX_C_SOURCE
+#define _POSIX_C_SOURCE 200112L
+#endif
+
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <stdio.h>
@@ -9,46 +17,63 @@
 #include <sys/socket.h>
 #include <unistd.h>
 #include <errno.h>
-#include "utils/logger.h"
-#include "server/serverUtils.h"
+#include <sys/types.h> // getaddrinfo
+#include <sys/socket.h> // getaddrinfo, connect
+#include <netdb.h> // getaddrinfo, addrinfo
+#include <utils/logger.h>
+#include <server/serverUtils.h>
 
-int createTCPSocketServer(unsigned int port)
+int createTCPSocketServer(char *port, char *ip)
 {
-        log(DEBUG, "Port: %d", port);
-        struct sockaddr_in addr;
-        memset(&addr, 0, sizeof(addr));
-        addr.sin_family = AF_INET;
-        addr.sin_addr.s_addr = htonl(INADDR_ANY);
-        addr.sin_port = htons(port);
+        log(DEBUG, "IP: %s", ip);
+        log(DEBUG, "Port: %s", port);
 
-        const int serverSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-        if (serverSocket < 0) {
-                log(ERROR, "[serverUtils][createTCPSocketServer] Unable to create socket");
+        int fd = -1;
+        struct addrinfo ainfo;
+        struct addrinfo *sv_addr = NULL;
+
+        memset(&ainfo, 0, sizeof(struct addrinfo));
+
+        ainfo.ai_family = AF_UNSPEC; // IPv4 or IPv6
+        ainfo.ai_socktype = SOCK_STREAM;
+        ainfo.ai_protocol = IPPROTO_TCP;
+
+        if (0 != getaddrinfo(ip, port, &ainfo, &sv_addr)) {
                 return -1;
         }
 
-        setsockopt(serverSocket, SOL_SOCKET, SO_REUSEADDR, &(int){ 1 }, sizeof(int));
+        for (struct addrinfo *addr = sv_addr; addr != NULL && fd < 0; addr = addr->ai_next) {
+                fd = socket(addr->ai_family, addr->ai_socktype, addr->ai_protocol);
+                if (fd < 0) {
+                        log(ERROR, "[serverUtils][createTCPSocketServer] Unable to create socket");
+                        return -1;
+                }
 
-        if (bind(serverSocket, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
-                log(ERROR, "[serverUtils][createTCPSocketServer] Unable to bind socket %d",
-                    serverSocket);
-                close(serverSocket);
-                return -1;
+                setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &(int){ 1 }, sizeof(int));
+
+                if (bind(fd, addr->ai_addr, addr->ai_addrlen) < 0) {
+                        log(ERROR, "[serverUtils][createTCPSocketServer] Unable to bind socket %d",
+                            fd);
+                        close(fd);
+                        return -1;
+                }
+                log(DEBUG, "[serverUtils][createTCPSocketServer] Socket %d bounded to port %s", fd,
+                    port);
         }
-        log(DEBUG, "[serverUtils][createTCPSocketServer] Socket %d bounded to port %d",
-            serverSocket, port);
 
-        if (listen(serverSocket, port)) {
+        freeaddrinfo(sv_addr);
+
+        if (listen(fd, atoi(port))) {
                 log(ERROR,
-                    "[serverUtils][createTCPSocketServer] Unable to listen to port %d with socket %d",
-                    port, serverSocket);
-                close(serverSocket);
+                    "[serverUtils][createTCPSocketServer] Unable to listen to port %s with socket %d",
+                    port, fd);
+                close(fd);
                 return -1;
         }
 
-        log(DEBUG, "[serverUtils][createTCPSocketServer] Socket %d listening", serverSocket);
+        log(DEBUG, "[serverUtils][createTCPSocketServer] Socket %d listening", fd);
 
-        return serverSocket;
+        return fd;
 }
 
 #endif

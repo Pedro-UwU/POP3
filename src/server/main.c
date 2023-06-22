@@ -94,9 +94,6 @@ int main(int argc, char **argv)
         else
                 setLogLevel(INFO);
 
-        unsigned int port = args.server.port;
-        unsigned int monitor_port = args.monitor.port;
-
         init_monitor();
 
         if (args.user != 0 && args.pass != 0)
@@ -111,18 +108,20 @@ int main(int argc, char **argv)
         fd_selector selector = NULL;
 
         // Create master POP3 socket
-        int masterSocket = createTCPSocketServer(port);
+        int masterSocket = createTCPSocketServer(args.server.port_s, args.server.ip);
         if (masterSocket < 0) {
                 log(FATAL, "Couln't create master socket");
                 goto finally;
         }
+        log(DEBUG, "POP3 socket created.");
 
         // Create master Monitor Socket
-        int monitorSocket = createTCPSocketServer(monitor_port);
+        int monitorSocket = createTCPSocketServer(args.monitor.port_s, args.monitor.ip);
         if (monitorSocket < 0) {
                 log(FATAL, "Couldn't create monitor socket");
                 goto finally;
         }
+        log(DEBUG, "Monitor socket created.");
 
         // Register signal handlers
         signal(SIGINT, handleSignal);
