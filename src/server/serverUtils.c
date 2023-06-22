@@ -36,6 +36,7 @@ int createTCPSocketServer(char *port, int protocol)
         ainfo.ai_family = protocol;
         ainfo.ai_socktype = SOCK_STREAM;
         ainfo.ai_protocol = IPPROTO_TCP;
+        ainfo.ai_flags = AI_PASSIVE;
 
         if (0 != getaddrinfo(NULL, port, &ainfo, &sv_addr)) {
                 return -1;
