@@ -362,6 +362,7 @@ static bool handle_cmd(struct selector_key *key)
                          "GET_USER <username>\r\n"
                          "ADD_USER <username> <password>\r\n"
                          "DELETE_USER <username>\r\n"
+                         "POPULATE_USER <username>\r\n"
                          "\r\n");
         } else if (data->logged == false) {
                 data->err_code = MONITOR_NOT_LOGGED;
