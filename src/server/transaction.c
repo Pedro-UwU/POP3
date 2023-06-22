@@ -101,16 +101,19 @@ unsigned trans_process(struct selector_key *key)
 
         // Handle request
         char msg[MAX_RSP_LEN];
+        msg[0] = '\0';
 
         handle_request(key, msg);
 
-        ssize_t sent_bytes = write_msg(key, msg);
-        if (sent_bytes < 0) {
-                log(ERROR, "Something went wrong when sending message.");
-                return ERROR_POP3;
+        if (msg[0] != '\0') {
+                ssize_t sent_bytes = write_msg(key, msg);
+                if (sent_bytes < 0) {
+                        log(ERROR, "Something went wrong when sending message.");
+                        return ERROR_POP3;
+                }
+                buffer_read_adv(output_buffer, sent_bytes);
         }
 
-        buffer_read_adv(output_buffer, sent_bytes);
         if (buffer_can_read(output_buffer) == true) { // Things left to send
                 data->send.finished = false;
                 goto finally;
@@ -181,7 +184,7 @@ static unsigned write_terminator(struct selector_key *key)
                 return ERROR_POP3;
         }
 
-        strncpy((char *)bytes, TERMINATOR, 1 + TERMINATOR_LEN);
+        strncpy((char *)bytes, TERMINATOR, TERMINATOR_LEN);
         buffer_write_adv(output_buffer, TERMINATOR_LEN);
 
         return TRANSACTION;
@@ -240,6 +243,7 @@ static void handle_request(struct selector_key *key, char msg[MAX_RSP_LEN])
         } else if (strcmp(cmd, "NOOP") == 0) {
                 sprintf(msg, "+OK\r\n");
         } else if (strcmp(cmd, "QUIT") == 0) {
+                msg[0] = '\0';
                 data->next_state = UPDATE;
         } else {
                 sprintf(msg, "-ERR invalid command\r\n");
@@ -256,7 +260,7 @@ static void cmd_stat(client_data *data, char msg[MAX_RSP_LEN])
                 return;
         }
 
-        sprintf(msg, "+OK %d %ld\r\n", mails->len - mails->ndel, size - del_size);
+        sprintf(msg, "+OK %u %lu\r\n", mails->len - mails->ndel, size - del_size);
 }
 
 static void cmd_list(struct selector_key *key, char msg[MAX_RSP_LEN])
@@ -274,8 +278,8 @@ static void cmd_list(struct selector_key *key, char msg[MAX_RSP_LEN])
 
         log(DEBUG, "list cmd: %s", data->parser.trans_parser.cmd);
         if (data->parser.trans_parser.total_arg == 0) {
-                sprintf(msg, "+OK %d new messages (%ld octects)\r\n", mails->len - mails->ndel,
-                        size - del_size);
+                sprintf(msg, "+OK %u new messages (%ld octects)\r\n", mails->len - mails->ndel,
+                        (long)size - del_size);
 
                 data->send.finished = false;
                 data->send.multiline = true;
@@ -401,7 +405,7 @@ static void cmd_rset(client_data *data, char msg[MAX_RSP_LEN])
                 maildir_set_del(mails, i, false);
         }
 
-        sprintf(msg, "+OK maildrop has %d messages (%ld octects)\r\n", mails->len, size);
+        sprintf(msg, "+OK maildrop has %u messages (%lu octects)\r\n", mails->len, size);
 }
 
 static int get_new_mails(client_data *data, maildir_mails_t **mails, size_t *size, size_t *del_size)
