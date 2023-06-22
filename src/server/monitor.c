@@ -17,7 +17,7 @@
 #include <string.h>
 
 #define MAX_SOCKETS 1023
-#define MAX_MSG_LEN 1024
+#define MAX_MSG_LEN 32768
 
 static bool logged = false;
 
