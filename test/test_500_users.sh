@@ -51,7 +51,7 @@ fi
 mkdir -p "$dir_results"
 
 for ((i=1; i<=500; i++)); do
-    curl --url 'pop3://127.0.0.1:60711/' -u "user$i:1234" > /dev/null 2> "$dir_results"/"user$i.txt" &
+    curl --url "pop3://$ip:$port/" -u "user$i:1234" > /dev/null 2> "$dir_results"/"user$i.txt" &
 done
 
 echo "See curl output in: $SCRIPT_DIR/$dir_results"

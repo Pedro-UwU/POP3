@@ -25,7 +25,7 @@
 readonly SCRIPT_DIR="$(dirname "${BASH_SOURCE[0]}")"
 pushd "$SCRIPT_DIR" &> /dev/null || exit 1
 
-populate_maildir=1   # 0 = YES; 1 = NO. Creates a lot of data.
+populate_maildir=0   # 0 = YES; 1 = NO. Creates a lot of data.
 
 ip="127.0.0.1"       # Replace with the desired IP address
 port=60711           # Replace with the desired port number
