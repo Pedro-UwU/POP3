@@ -11,12 +11,13 @@
 
 static void handle_file_reader(struct selector_key *key);
 static void change_interests(struct selector_key *key);
-static char* external_program = "cat";
+static char *external_program = "cat";
 
-void set_external_program(char *program) {
-    if (program != NULL) {
-        external_program = program;
-    }
+void set_external_program(char *program)
+{
+        if (program != NULL) {
+                external_program = program;
+        }
 }
 
 static struct fd_handler file_reader_handler = {
@@ -49,9 +50,10 @@ static void handle_file_reader(struct selector_key *key)
         if (read_bytes == 0) { // EOF
                 selector_unregister_fd(key->s, key->fd);
                 *(fr_data->file_reader) = NULL;
-                if (strcmp(external_program, "cat") != 0) { // If it is not cat, add \r\n in case the program doesn't do that
-                    snprintf((char *)write_ptr, can_read_bytes, "\r\n");
-                    buffer_write_adv(output_buffer, strlen("\r\n"));
+                if (strcmp(external_program, "cat") !=
+                    0) { // If it is not cat, add \r\n in case the program doesn't do that
+                        snprintf((char *)write_ptr, can_read_bytes, "\r\n");
+                        buffer_write_adv(output_buffer, strlen("\r\n"));
                 }
                 close(fr_data->fd);
                 log(DEBUG, "File reader EOF");
@@ -64,7 +66,8 @@ static void handle_file_reader(struct selector_key *key)
 void init_file_reader(struct selector_key *key, file_reader_data *fr_data)
 {
         char aux_buffer[1024] = { 0 };
-        sprintf(aux_buffer, "%s \"%s\" | sed '1!s/^\\./\\.\\./g';",external_program, fr_data->file_path);
+        sprintf(aux_buffer, "%s \"%s\" | sed '1!s/^\\./\\.\\./g';", external_program,
+                fr_data->file_path);
 
         FILE *fp = popen(aux_buffer, "r");
         if (fp == NULL) {

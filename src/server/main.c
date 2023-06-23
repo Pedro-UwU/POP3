@@ -100,7 +100,6 @@ int main(int argc, char **argv)
                 log(DEBUG, "External command for mails is: %s", args.ext_cmd);
                 set_external_program(args.ext_cmd);
         }
-    
 
         init_monitor();
 
