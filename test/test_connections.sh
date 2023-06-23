@@ -32,8 +32,7 @@ port=60711           # Replace with the desired port number
 timeout_duration=20  # Replace with the desired timeout duration in seconds
 pop3_command=""      # See below. Will be replaced with desired command(s)
 
-connections=1000
-
+connections=500
 readonly CLIENT_BIN="../bin/client"
 
 yes_no_question() {
