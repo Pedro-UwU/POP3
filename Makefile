@@ -47,6 +47,8 @@ TEST_BINDIR 	:= $(abs_srctree)/bin/test
 TEST_OBJDIR	:= $(abs_srctree)/obj/test
 TEST_SRCDIR 	:= $(abs_srctree)/test
 
+MAILDROPDIR	:= $(abs_srctree)/bin/maildirs
+
 # Compiler and flags
 LDLIBS	:= 
 CC	:= gcc
@@ -79,7 +81,7 @@ force: clean all
 utils: $(BINDIR) $(OBJDIR)
 	@$(MAKE) -C $(UTILS) $(1)
 
-server: utils | $(BINDIR) $(OBJDIR)
+server: utils | $(BINDIR) $(OBJDIR) $(MAILDROPDIR)
 	@$(MAKE) -C $(SERVER) $(1)
 
 client: utils | $(BINDIR) $(OBJDIR)
@@ -90,7 +92,7 @@ test: server utils | $(TEST_BINDIR)
 	# @$(MAKE) -C $(SERVER) $(1)
 
 # Create directories
-$(BINDIR) $(OBJDIR) $(TEST_BINDIR):
+$(BINDIR) $(OBJDIR) $(TEST_BINDIR) $(MAILDROPDIR):
 	@$(MKDIR) $@
 
 clean:
