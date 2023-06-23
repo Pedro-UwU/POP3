@@ -1,3 +1,25 @@
+/**
+ * MIT License - 2023
+ * Copyright 2023 - Lopez Guzman, Zahnd
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of
+ * this software and associated documentation files (the “Software”), to deal in
+ * the Software without restriction, including without limitation the rights to
+ * use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+ * of the Software, and to permit persons to whom the Software is furnished to do
+ * so, subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
 #define _XOPEN_SOURCE 700
 
 #include "server/pop3.h"
@@ -251,15 +273,25 @@ void monitor_populate_maildir(fd_selector s, monitor_data *data)
                 return;
         }
         char cmd[1024];
+
         user_maildir_t md;
         maildir_open(&md, data->monitor_parser.arg);
+        maildir_build(&md);
+        char *path = maildir_get_path(&md);
+
         sprintf(cmd,
                 "id=$(date +%%s); "
                 "for i in $(seq 1 10); do "
-                "dd if=/dev/urandom bs=1KB count=$((12 + (%d*i) %% 49152)) 2> /dev/null | base64 > \"%s/new/${id}_mail\"${i}; printf \'\\r\\n\' >> \"%s/new/${id}_mail\"${i}; done; "
-                "[ $(find %s/new/ -maxdepth 1 -type f -name \"${id}_mail*\" | wc -l) -eq 10 ] "
+                "dd if=/dev/urandom bs=1KB count=$((12 + (%d*i) %% 49152)) 2> /dev/null | "
+                "base64 > \"%s/new/${id}_mail\"${i}; "
+                "printf \'\\r\\n\' >> \"%s/new/${id}_mail\"${i}; "
+                "done; "
+                "[ $(find %s/new/ -maxdepth 1 -type f -name \"${id}_mail*\" | "
+                "wc -l) -eq 10 ] "
                 "&& echo \"DONE\" || rm %s/new/\"${id}\"*",
-                1111, md.path, md.path, md.path);
+                1111, path, path, path, path);
         init_cmd_data(&data->cmd_data, data->client_fd, s, MONITOR_POPULATE_MAILDIR);
         executeCommand(cmd, &data->cmd_data);
+
+        free(path);
 }

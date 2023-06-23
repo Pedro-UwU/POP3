@@ -3,7 +3,7 @@
 This markdown file presents a simple and text-based monitor protocol for POP3 servers. The protocol features a line-based structure with specific line endings, uppercase instructions, and limited-length arguments. Authentication is required, and various commands are available for tasks such as retrieving user information, managing connections, and performing user-related actions. The protocol's response format distinguishes between success ("OwO") and error ("UwU") conditions. Overall, this protocol provides an efficient and straightforward approach to monitoring POP3 servers.
 ## Characteristics
 - Text-based protocol
-- Line ends with \<CRLF> or \<LF>
+- Line ends with \<CRLF>
 - All requests must be only one line
 - All words are separated by ONLY one space
 - The first word refers to the instruction
@@ -24,7 +24,7 @@ This markdown file presents a simple and text-based monitor protocol for POP3 se
 	- Returns a list of all the users, one per line. Each line obey the following syntax: `<username> <is_online>` where *is_online* can be ONLINE, LOGGING_IN or OFFLINE
 	```
 	C: GET_USERS
- 	S: :) 5
+ 	S: OwO
 	S: user1 OFFLINE
  	S: user2 ONLINE
  	S: user3 ONLINE

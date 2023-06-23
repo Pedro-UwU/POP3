@@ -1,3 +1,25 @@
+/**
+ * MIT License - 2023
+ * Copyright 2023 - Lopez Guzman, Zahnd
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of
+ * this software and associated documentation files (the “Software”), to deal in
+ * the Software without restriction, including without limitation the rights to
+ * use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+ * of the Software, and to permit persons to whom the Software is furnished to do
+ * so, subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
 #ifndef _POSIX_C_SOURCE
 #define _POSIX_C_SOURCE 200809L
 #elif _POSIX_C_SOURCE < 200809L
@@ -28,7 +50,6 @@ inline static void set_path_folder_md(user_maildir_t *md, char *folder);
 inline static void set_path_folder(char *path, unsigned len, char *folder);
 static void new_mail(maildir_mail_t *mail, const char *fname, const char *dir);
 static int create_dir(char *path);
-static void rand_str(char *buf, size_t size);
 static char *append_flags(char *flags, char *filename, unsigned *len);
 static char *move_and_set_flags(bool *success, maildir_mail_t *mail, char *flags);
 
@@ -58,6 +79,12 @@ int maildir_set_username(user_maildir_t *maildir, const char *username)
         sprintf(maildir->path, "%s/%s/%s/", MAILDIR_ROOT, maildir->user, MAILDIR_DIR_NAME);
         maildir->path_len = strlen(maildir->path);
 
+        if (create_dir(maildir->path) == -1)
+                return -1;
+
+        if (maildir_build(maildir) == -1)
+                return -1;
+
         return 0;
 }
 
@@ -85,6 +112,18 @@ void maildir_close(user_maildir_t *maildir)
                 free(maildir->new.mails);
         }
         maildir->new.len = 0;
+}
+
+char *maildir_get_path(user_maildir_t *maildir)
+{
+        if (maildir == NULL) {
+                log(ERROR, "NULL maildir");
+                return NULL;
+        }
+
+        maildir->path[maildir->path_len] = '\0';
+
+        return strdup(maildir->path);
 }
 
 int maildir_build(user_maildir_t *maildir)
@@ -116,46 +155,6 @@ int maildir_build(user_maildir_t *maildir)
                 return -1;
         }
         return 0;
-}
-
-void maildir_populate(user_maildir_t *maildir, unsigned n_mails)
-{
-        struct stat st;
-        srand(time(NULL));
-
-        char *tmp_path = calloc(maildir->path_len + 7, sizeof(char));
-        if (tmp_path == NULL) {
-                log(ERROR, "Could not allocate memory.");
-                goto finally;
-        }
-
-        strcpy(maildir->path + maildir->path_len, "new");
-        if (stat(maildir->path, &st) != 0) {
-                create_dir(maildir->path);
-        }
-
-        for (size_t i = 0; i < n_mails; i++) {
-                sprintf(tmp_path, "%s/XXXXXX", maildir->path);
-
-                int fd = mkstemp(tmp_path);
-                if (fd == -1) {
-                        log(ERROR, "Could not create mail.");
-                        goto finally;
-                }
-
-                char buf[2048];
-                size_t buf_len = rand() % 2048 + 1;
-                rand_str(buf, buf_len);
-
-                // Lock
-                write(fd, buf, buf_len);
-
-                close(fd);
-        }
-
-finally:
-        if (tmp_path != NULL)
-                free(tmp_path);
 }
 
 // List all
@@ -375,46 +374,6 @@ static int create_dir(char *path)
         } while (p - path < len);
 
         return 0;
-}
-
-static void rand_str(char *buf, size_t size)
-{
-        if (size == 0)
-                return;
-
-        int fd = -1;
-        unsigned char *buffer = NULL;
-
-        fd = open("/dev/urandom", O_RDONLY);
-        if (fd == -1) {
-                log(ERROR, "Could not open /dev/urandom o.O");
-                goto finally;
-        }
-
-        buffer = (unsigned char *)malloc(size);
-        if (buffer == NULL) {
-                log(ERROR, "Could not allocate memory.");
-                goto finally;
-        }
-
-        // Lock
-        ssize_t bytesRead = read(fd, buffer, size);
-        if (bytesRead == -1) {
-                log(ERROR, "Could not read from fd %d.", fd);
-                goto finally;
-        }
-
-        // Convert everything to ASCII
-        for (size_t i = 0; i < size; i++) {
-                buf[i] = buffer[i] % 94 + 33;
-        }
-
-finally:
-        if (fd > -1)
-                close(fd);
-
-        if (buffer != NULL)
-                free(buffer);
 }
 
 static char *append_flags(char *flags, char *filename, unsigned *len)
