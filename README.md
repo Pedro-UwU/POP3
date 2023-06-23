@@ -50,14 +50,15 @@ The following options are also available:
 ```
 Usage: ./bin/server [OPTION] COMAND [ARGUMENTS]...
 
-       -h              Print help
-       -V              Print version
-       -c <exec>       Run executable <exec> before RETR
-       -p <port>       POP3 server port
-       -l <ip>         POP3 server ip
-       -P <port>       Monitor port
-       -L <ip>         Monitor ip
-       -v              Set DEBUG level (default is INFO)
+       -h                      Print help
+       -V                      Print version
+       -u <user>:<pass>        Set <user> as the default user
+       -c <exec>               Run executable <exec> before RETR
+       -p <port>               POP3 server port
+       -l <ip>                 POP3 server ip
+       -P <port>               Monitor port
+       -L <ip>                 Monitor ip
+       -v                      Set DEBUG level (default is INFO)
 ```
 
 Argument `-c` is intended mainly for filtering: it will make the server answer `RETR` commands with

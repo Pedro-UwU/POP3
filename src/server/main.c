@@ -87,14 +87,15 @@ void help(const char *name)
         fprintf(stderr,
                 "Usage: %s [OPTION] COMAND [ARGUMENTS]...\n"
                 "\n"
-                "       -h              Print help\n"
-                "       -V              Print version\n"
-                "       -c <exec>       Run executable <exec> before RETR\n"
-                "       -p <port>       POP3 server port\n"
-                "       -l <ip>         POP3 server ip\n"
-                "       -P <port>       Monitor port\n"
-                "       -L <ip>         Monitor ip\n"
-                "       -v              Set DEBUG level (default is INFO)\n"
+                "       -h                      Print help\n"
+                "       -V                      Print version\n"
+                "       -u <user>:<pass>        Set <user> as the default user\n"
+                "       -c <exec>               Run executable <exec> before RETR\n"
+                "       -p <port>               POP3 server port\n"
+                "       -l <ip>                 POP3 server ip\n"
+                "       -P <port>               Monitor port\n"
+                "       -L <ip>                 Monitor ip\n"
+                "       -v                      Set DEBUG level (default is INFO)\n"
                 "\n",
                 name);
 }
