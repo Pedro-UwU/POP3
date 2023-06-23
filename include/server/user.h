@@ -3,7 +3,7 @@
 #include <stdbool.h>
 #include <pop3def.h>
 
-#define MAX_USERS 512
+#define MAX_USERS 1022
 
 typedef struct user_t {
         char uname[MAX_ARG_LEN + 1];
