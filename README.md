@@ -7,7 +7,9 @@ Version: 0.0.1
 
 ## Other documents
 
-[Monitor Protocol](docs/protocol.md)
+[Informe](/docs/Informe_TPE_Grupo-16.pdf)
+
+[Monitor Protocol](/docs/protocol.md)
 
 ## Requirements
 
