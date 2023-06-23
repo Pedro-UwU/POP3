@@ -52,8 +52,8 @@ MAILDROPDIR	:= $(abs_srctree)/bin/maildirs
 # Compiler and flags
 LDLIBS	:= 
 CC	:= gcc
-CFLAGS	:= -g -std=c11 -Wno-variadic-macros \
-		-Wall -Wextra \
+CFLAGS	:= -g -std=c11 -Wno-variadic-macros -Wno-unused-parameter \
+		-Wall -Wextra -Wno-stringop-truncation \
 		-fsanitize=address -fdiagnostics-color=auto \
 		-I$(INCLUDE) $(LDLIBS)
 
