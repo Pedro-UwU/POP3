@@ -189,6 +189,15 @@ Tests that a single call to the server executes all commands. The default comman
 echo -en "USER USER1\r\nPASS 12345\r\nLIST\r\nSTAT\r\nQUIT\r\n" | nc -C 127.0.0.1 60711
 ```
 
+## `test_integrity.sh`
+
+Tests that an email is send exactly as it's stored on the user's Maildir.
+
+To do so, it creates an user with a 2 GiB file and sends it to a curl client, which stores
+the mail in another file. Then both files are hashed (using
+[sha256sum](https://linux.die.net/man/1/sha256sum)) and both hashes are displayed on screen,
+as well as a message indicating that they are both equal.
+
 ## License
 
 > MIT License - 2023
