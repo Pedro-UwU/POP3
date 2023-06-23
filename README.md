@@ -7,7 +7,7 @@ Version: 0.0.1
 
 ## Other documents
 
-[Monitor Protocol](/protocol.md)
+[Monitor Protocol](docs/protocol.md)
 
 ## Requirements
 
