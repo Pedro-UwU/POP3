@@ -21,6 +21,8 @@ typedef struct {
 
         char *user;
         char *pass;
+
+        char *ext_cmd;
 } args_t;
 
 // Returns optind. On error it returns < 0

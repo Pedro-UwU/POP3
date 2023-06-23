@@ -35,11 +35,14 @@ int parse_args(int argc, char **argv, args_t *args)
 
         int i = 0;
         while (i < argc) {
-                char c = getopt(argc, argv, "hp:l:P:L:u:vV");
+                char c = getopt(argc, argv, "c:hp:l:P:L:u:vV");
                 if (c == -1)
                         break;
 
                 switch (c) {
+                case 'c':
+                        args->ext_cmd = optarg;
+                        break;
                 case 'h':
                         return -1;
 

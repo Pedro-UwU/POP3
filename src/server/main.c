@@ -66,6 +66,7 @@ void help(const char *name)
                 "\n"
                 "       -h              Print help\n"
                 "       -V              Print version\n"
+                "       -c <exec>       Run executable <exec> before RETR\n"
                 "       -p <port>       POP3 server port\n"
                 "       -l <ip>         POP3 server ip\n"
                 "       -P <port>       Monitor port\n"
@@ -93,6 +94,9 @@ int main(int argc, char **argv)
                 setLogLevel(DEBUG);
         else
                 setLogLevel(INFO);
+
+        if (args.ext_cmd != NULL)
+                log(DEBUG, "External command for mails is: %s", args.ext_cmd);
 
         init_monitor();
 
