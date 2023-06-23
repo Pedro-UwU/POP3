@@ -18,5 +18,6 @@ typedef struct file_reader_data {
 
 void init_file_reader(struct selector_key *key, file_reader_data *fr_data);
 void load_more_bytes(struct selector_key *key);
+void set_external_program(char *program);
 
 #endif

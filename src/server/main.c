@@ -19,6 +19,7 @@
 #include <utils/args.h>
 #include <time.h>
 #include <utils/logger.h>
+#include <server/fileReader.h>
 
 int serverRunning = 1;
 
@@ -95,8 +96,11 @@ int main(int argc, char **argv)
         else
                 setLogLevel(INFO);
 
-        if (args.ext_cmd != NULL)
+        if (args.ext_cmd != NULL) {
                 log(DEBUG, "External command for mails is: %s", args.ext_cmd);
+                set_external_program(args.ext_cmd);
+        }
+    
 
         init_monitor();
 
