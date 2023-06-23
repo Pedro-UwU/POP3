@@ -1,4 +1,4 @@
-#!/usr/bin/env/bash
+#!/usr/bin/env bash
 #
 # MIT License - 2023
 # Copyright 2023 - Lopez Guzman, Zahnd
