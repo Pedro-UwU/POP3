@@ -24,7 +24,7 @@ This markdown file presents a simple and text-based monitor protocol for POP3 se
 	- Returns a list of all the users, one per line. Each line obey the following syntax: `<username> <is_online>` where *is_online* can be ONLINE, LOGGING_IN or OFFLINE
 	```
 	C: GET_USERS
- 	S: :) 5
+ 	S: OwO
 	S: user1 OFFLINE
  	S: user2 ONLINE
  	S: user3 ONLINE
