@@ -88,7 +88,7 @@ static void handle_file_reader(struct selector_key *key)
 void init_file_reader(struct selector_key *key, file_reader_data *fr_data)
 {
         char aux_buffer[1024] = { 0 };
-        sprintf(aux_buffer, "%s \"%s\" | sed '1!s/^\\./\\.\\./g';", external_program,
+        sprintf(aux_buffer, "%s \"%s\" | sed -n '1!s/^\\./\\.\\./g';", external_program,
                 fr_data->file_path);
 
         FILE *fp = popen(aux_buffer, "r");
